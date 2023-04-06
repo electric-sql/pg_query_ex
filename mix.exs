@@ -3,7 +3,7 @@ defmodule PgQuery.MixProject do
 
   def project do
     [
-      app: :pg_query,
+      app: :pg_query_ex,
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,

@@ -10,7 +10,7 @@ defmodule PgQuery.Parser do
   end
 
   defp load_nif do
-    :pg_query
+    :pg_query_ex
     |> Application.app_dir("priv/libpg_query_ex")
     |> String.to_charlist()
     |> :erlang.load_nif(0)

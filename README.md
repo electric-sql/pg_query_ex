@@ -1,3 +1,17 @@
+<a href="https://electric-sql.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"
+        srcset="https://raw.githubusercontent.com/electric-sql/meta/main/identity/ElectricSQL-logo-light-trans.svg"
+    />
+    <source media="(prefers-color-scheme: light)"
+        srcset="https://raw.githubusercontent.com/electric-sql/meta/main/identity/ElectricSQL-logo-black.svg"
+    />
+    <img alt="ElectricSQL logo"
+        src="https://raw.githubusercontent.com/electric-sql/meta/main/identity/ElectricSQL-logo-black.svg"
+    />
+  </picture>
+</a>
+
 [![License - Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue)](main/LICENSE)
 
 # PgQuery
@@ -10,18 +24,19 @@ An Elixir interface to the [lib_pg_query postgres query parser](https://github.c
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `pg_query` to your list of dependencies in `mix.exs`:
+**This package is not currently published to Hex**
+
+The package can be installed by adding `pg_query_ex` to your list of
+dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:pg_query, "~> 0.1.0"}
+    {:pg_query_ex, github: "electric-sql/pg_query_ex"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/pg_query>.
+## Contributing
 
+See the [Community Guidelines](https://github.com/electric-sql/meta) including the [Guide to Contributing](https://github.com/electric-sql/meta/blob/main/CONTRIBUTING.md) and [Contributor License Agreement](https://github.com/electric-sql/meta/blob/main/CLA.md).
