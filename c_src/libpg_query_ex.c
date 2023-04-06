@@ -22,9 +22,13 @@ static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
   ERL_NIF_TERM term;
 
   if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
+    // add one more byte for the null termination
     char statement[query.size + 1];
-    memset(statement, 0, sizeof(statement));
+
     strncpy(statement, (char *)query.data, query.size);
+
+    // terminate the string
+    statement[query.size] = 0;
 
     PgQueryProtobufParseResult result = pg_query_parse_protobuf(statement);
 
