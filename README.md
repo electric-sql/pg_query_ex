@@ -37,6 +37,12 @@ def deps do
 end
 ```
 
+## License
+
+This Elixir interface is distributed under the terms of the [Apache 2.0 license](main/LICENSE).
+
+The codebase also contains a git-subtree snapshot of [lib_pg_query](https://github.com/pganalyze/libpg_query) which is distributed under the [BSD 3-Clause license](https://github.com/pganalyze/libpg_query/blob/15-latest/LICENSE).
+
 ## Contributing
 
 See the [Community Guidelines](https://github.com/electric-sql/meta) including the [Guide to Contributing](https://github.com/electric-sql/meta/blob/main/CONTRIBUTING.md) and [Contributor License Agreement](https://github.com/electric-sql/meta/blob/main/CLA.md).
