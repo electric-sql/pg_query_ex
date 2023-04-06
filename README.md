@@ -39,7 +39,7 @@ end
 
 ## License
 
-This Elixir interface is distributed under the terms of the [Apache 2.0 license](main/LICENSE).
+This Elixir interface is distributed under the terms of the [Apache 2.0 license](LICENSE).
 
 The codebase also contains a git-subtree snapshot of [lib_pg_query](https://github.com/pganalyze/libpg_query) which is distributed under the [BSD 3-Clause license](https://github.com/pganalyze/libpg_query/blob/15-latest/LICENSE).
 
