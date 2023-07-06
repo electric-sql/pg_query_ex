@@ -5,7 +5,11 @@ CFLAGS += -I$(ERLANG_PATH)
 LIBPG_QUERY_PATH = c_src/libpg_query
 
 CFLAGS += -I$(LIBPG_QUERY_PATH) -fPIC
-LDFLAGS = -lpthread -lrt
+UNAME_P := $(shell uname -p)
+LDFLAGS = -lpthread
+ifneq ($(filter arm%,$(UNAME_P)),)
+    LDFLAGS += -undefined dynamic_lookup
+endif
 
 .PHONY: all libpg_query_ex clean
 
