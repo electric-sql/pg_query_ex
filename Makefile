@@ -6,7 +6,7 @@ LIBPG_QUERY_PATH = c_src/libpg_query
 
 CFLAGS += -I$(LIBPG_QUERY_PATH) -fPIC
 
-LDFLAGS = -lpthread
+LDFLAGS = -lpthread -shared
 ifeq ($(shell uname -s),Darwin)
     LDFLAGS += -undefined dynamic_lookup
 endif
@@ -22,7 +22,7 @@ $(LIBPG_QUERY_PATH)/libpg_query.a:
 	$(MAKE) -B -C $(LIBPG_QUERY_PATH) libpg_query.a
 
 priv/libpg_query_ex.so: priv $(LIBPG_QUERY_PATH)/libpg_query.a c_src/libpg_query_ex.c
-	$(CC) $(CFLAGS) -shared $(LDFLAGS) -o $@ c_src/libpg_query_ex.c $(LIBPG_QUERY_PATH)/libpg_query.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ c_src/libpg_query_ex.c $(LIBPG_QUERY_PATH)/libpg_query.a
 
 protobuf:
 	MIX_ENV=prod mix protox.generate --output-path=lib/pg_query/proto --multiple-files --keep-unknown-fields=false c_src/libpg_query/protobuf/pg_query.proto
