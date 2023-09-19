@@ -15,6 +15,13 @@ static ERL_NIF_TERM result_tuple(ErlNifEnv *env, const char *status,
   return enif_make_tuple2(env, atom, binary);
 }
 
+ERL_NIF_TERM make_binary(ErlNifEnv *env, char *source) {
+  ERL_NIF_TERM binary;
+  size_t len = strlen(source);
+  unsigned char *data = enif_make_new_binary(env, len, &binary);
+  memcpy(data, source, len);
+  return binary;
+}
 
 static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
                                 const ERL_NIF_TERM argv[]) {
@@ -33,13 +40,30 @@ static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
     PgQueryProtobufParseResult result = pg_query_parse_protobuf(statement);
 
     if (result.error) {
-      size_t max_len = strlen(result.error->message) + 30;
-      char error[max_len];
-      memset(error, 0, sizeof(error));
-      snprintf(error, max_len, "error: %s at char %d", result.error->message,
-               result.error->cursorpos);
+      ERL_NIF_TERM error_map = enif_make_new_map(env);
 
-      term = result_tuple(env, "error", error, strlen(error));
+      if (!enif_make_map_put(
+        env,
+        error_map,
+        enif_make_atom(env, "message"), 
+        make_binary(env, result.error->message),
+        &error_map
+      )) {
+        return enif_raise_exception(env, make_binary(env, "failed to update map"));
+      }
+
+      if (!enif_make_map_put(
+        env,
+        error_map,
+        enif_make_atom(env, "cursorpos"), 
+        // drop the cursorpos by one, so it's zero-indexed
+        enif_make_int(env, result.error->cursorpos - 1),
+        &error_map
+      )) {
+        return enif_raise_exception(env, make_binary(env, "failed to update map"));
+      }
+
+      term = enif_make_tuple2(env, enif_make_atom(env, "error"), error_map);
     } else {
       term = result_tuple(env, "ok", result.parse_tree.data,
                           result.parse_tree.len);
