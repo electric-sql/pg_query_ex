@@ -23,4 +23,13 @@ defmodule PgQueryTest do
              ]
            } = ast
   end
+
+  test "error results" do
+    query = "select * from something; snot!"
+
+    assert {:error, %{cursorpos: cursorpos, message: _}} =
+             PgQuery.parse(query)
+
+    assert binary_part(query, cursorpos, 4) == "snot"
+  end
 end

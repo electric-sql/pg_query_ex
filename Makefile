@@ -11,7 +11,7 @@ ifeq ($(shell uname -s),Darwin)
     LDFLAGS += -undefined dynamic_lookup
 endif
 
-.PHONY: all libpg_query_ex clean
+.PHONY: all libpg_query_ex clean update-libpg_query
 
 all: priv/libpg_query_ex.so
 
@@ -31,3 +31,7 @@ clean:
 	$(MIX) clean
 	$(MAKE) -C $(LIBPG_QUERY_PATH) clean
 	$(RM) priv/libpg_query_ex.so
+
+update-libpg_query:
+	git subtree pull -P "c_src/libpg_query" --squash https://github.com/pganalyze/libpg_query.git 15-latest
+

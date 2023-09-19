@@ -222,6 +222,8 @@ const char* tests[] = {
   "SET search_path TO my_schema, public",
   "SET LOCAL search_path TO my_schema, public",
   "SET \"user\" TO 4",
+  "SET TIME ZONE interval '+00:00' hour to minute",
+  "SET timezone TO -7",
   "VACUUM",
   "VACUUM t",
   "VACUUM (FULL) t",
@@ -388,6 +390,14 @@ const char* tests[] = {
   "MERGE INTO measurement m USING new_measurement nm ON m.city_id = nm.city_id AND m.logdate = nm.logdate WHEN MATCHED AND nm.peaktemp IS NULL THEN DELETE WHEN MATCHED THEN UPDATE SET peaktemp = GREATEST(m.peaktemp, nm.peaktemp), unitsales = m.unitsales + COALESCE(nm.unitsales, 0) WHEN NOT MATCHED THEN INSERT (city_id, logdate, peaktemp, unitsales) VALUES (city_id, logdate, peaktemp, unitsales)",
   "COPY vistest FROM STDIN FREEZE CSV",
   "CREATE INDEX \"foo.index\" ON foo USING btree (bar)",
+  "CREATE TABLE distributors (did int, name varchar(40), UNIQUE (name) WITH (fillfactor=70)) WITH (fillfactor=70)",
+  "SHOW ALL",
+  "ALTER TABLE ONLY public.\"Test 123\" ADD CONSTRAINT \"Test 123_pkey\" PRIMARY KEY (c1)",
+  "CREATE PROCEDURE insert_data(a int, b int) LANGUAGE sql BEGIN ATOMIC INSERT INTO tbl VALUES (a); INSERT INTO tbl VALUES (b); END",
+  "CREATE PROCEDURE do_nothing() LANGUAGE sql BEGIN ATOMIC END",
+  "CREATE PROCEDURE returns_one() LANGUAGE sql BEGIN ATOMIC RETURN 1; END",
+  "CREATE PROCEDURE updates_and_returns_one() LANGUAGE sql BEGIN ATOMIC UPDATE tbl SET a = 1; RETURN 1; END",
+  "SELECT 1 FROM tbl LIMIT COALESCE($1, $2)",
 };
 
 size_t testsLength = __LINE__ - 4;
