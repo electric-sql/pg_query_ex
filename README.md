@@ -12,13 +12,13 @@
   </picture>
 </a>
 
-[![License - Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue)](main/LICENSE)
+[![License - Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue)](./LICENSE)
 
 # PgQuery
 
 An Elixir interface to the [lib_pg_query postgres query parser](https://github.com/pganalyze/libpg_query).
 
-``` elixir
+```elixir
 {:ok, ast} = PgQuery.parse("select * from a_table")
 ```
 
@@ -39,7 +39,7 @@ end
 
 ## License
 
-This Elixir interface is distributed under the terms of the [Apache 2.0 license](LICENSE).
+This Elixir interface is distributed under the terms of the [Apache 2.0 license](./LICENSE).
 
 The codebase also contains a git-subtree snapshot of [lib_pg_query](https://github.com/pganalyze/libpg_query) which is distributed under the [BSD 3-Clause license](https://github.com/pganalyze/libpg_query/blob/15-latest/LICENSE).
 
