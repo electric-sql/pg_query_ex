@@ -5,7 +5,7 @@ defmodule PgQuery.MixProject do
     [
       app: :pg_query_ex,
       elixir: "~> 1.13",
-      version: "0.5.3",
+      version: "0.5.4",
       start_permanent: Mix.env() == :prod,
       compilers: [:elixir_make] ++ Mix.compilers(),
       deps: deps(),
@@ -61,7 +61,7 @@ defmodule PgQuery.MixProject do
   end
 
   defp description do
-    "An Elixir interface to the lib_pg_query postgres query parser. Converts a valid PostgreSQL query into a Protobuf based AST."
+    "An Elixir interface to the libpg_query postgres query parser. Converts a valid PostgreSQL query into a Protobuf based AST."
   end
 
   defp docs do
