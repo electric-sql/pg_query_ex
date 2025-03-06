@@ -13,4 +13,16 @@ defmodule PgQuery do
   """
   @spec parse(String.t()) :: {:ok, %PgQuery.ParseResult{}} | {:error, error()}
   defdelegate parse(stmt), to: PgQuery.Parser
+
+  @doc """
+  Deparses the Protobuf AST `parse_result` into a query string.
+  """
+  @spec protobuf_to_query(%PgQuery.ParseResult{}) :: {:ok, String.t()} | {:error, error()}
+  defdelegate protobuf_to_query(parse_result), to: PgQuery.Parser
+
+  @doc """
+  Deparses the Protobuf AST `parse_result` into a query string.
+  """
+  @spec protobuf_to_query!(%PgQuery.ParseResult{}) :: String.t() | no_return()
+  defdelegate protobuf_to_query!(parse_result), to: PgQuery.Parser
 end

@@ -76,6 +76,46 @@ static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
   }
 }
 
-static ErlNifFunc funcs[] = {{"parse_query", 1, parse_query}};
+static ERL_NIF_TERM deparse_query(ErlNifEnv *env, int argc,
+                               const ERL_NIF_TERM argv[]) {
+  ErlNifBinary proto;
+  ERL_NIF_TERM term;
+
+  if (argc == 1 && enif_inspect_binary(env, argv[0], &proto)) {
+    PgQueryProtobuf parse_tree;
+    parse_tree.data = (char *)proto.data;
+    parse_tree.len = proto.size;
+
+    PgQueryDeparseResult result = pg_query_deparse_protobuf(parse_tree);
+
+    if (result.error) {
+      ERL_NIF_TERM error_map = enif_make_new_map(env);
+
+      if (!enif_make_map_put(
+        env,
+        error_map,
+        enif_make_atom(env, "message"), 
+        make_binary(env, result.error->message),
+        &error_map
+      )) {
+        return enif_raise_exception(env, make_binary(env, "failed to update map"));
+      }
+
+      term = enif_make_tuple2(env, enif_make_atom(env, "error"), error_map);
+    } else {
+      term = result_tuple(env, "ok", result.query, strlen(result.query));
+    }
+    pg_query_free_deparse_result(result);
+
+    return term;
+  } else {
+    return enif_make_badarg(env);
+  }
+}
+
+static ErlNifFunc funcs[] = {
+  {"parse_query", 1, parse_query},
+  {"deparse_query", 1, deparse_query}
+};
 
 ERL_NIF_INIT(Elixir.PgQuery.Parser, funcs, NULL, NULL, NULL, NULL)

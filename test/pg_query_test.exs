@@ -32,4 +32,11 @@ defmodule PgQueryTest do
 
     assert binary_part(query, cursorpos, 4) == "snot"
   end
+
+  test "parses and deparses a query" do
+    query = "CREATE TABLE a (id int8 PRIMARY KEY)"
+    assert {:ok, ast} = PgQuery.parse(query)
+    assert {:ok, query2} = PgQuery.protobuf_to_query(ast)
+    assert query == query2
+  end
 end
