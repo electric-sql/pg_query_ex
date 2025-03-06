@@ -1,0 +1,36 @@
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.17.1'
+          otp-version: '27.0'
+      
+      - name: Restore dependencies cache
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+      
+      - name: Install dependencies
+        run: mix deps.get
+
+      - run: mix compile --all-warnings --warnings-as-errors
+      - name: Run tests
+        run: mix test
+    
