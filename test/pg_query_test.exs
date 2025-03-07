@@ -39,4 +39,30 @@ defmodule PgQueryTest do
     assert {:ok, query2} = PgQuery.protobuf_to_query(ast)
     assert query == query2
   end
+
+  test "parses and deparses a query with bang function" do
+    query = "CREATE TABLE a (id int8 PRIMARY KEY)"
+    ast = PgQuery.parse!(query)
+    query2 = PgQuery.protobuf_to_query!(ast)
+    assert query == query2
+  end
+
+  test "scans a query" do
+    query = "SELECT * FROM users WHERE id = 1"
+    assert {:ok, scan_result} = PgQuery.scan(query)
+
+    # Basic structure validation
+    assert %PgQuery.ScanResult{tokens: tokens} = scan_result
+    assert is_list(tokens)
+    assert length(tokens) == 8
+
+    # Check some expected tokens
+    assert Enum.any?(tokens, fn token ->
+             token.token == :SELECT
+           end)
+
+    assert Enum.any?(tokens, fn token ->
+             token.token == :FROM
+           end)
+  end
 end

@@ -113,9 +113,62 @@ static ERL_NIF_TERM deparse_query(ErlNifEnv *env, int argc,
   }
 }
 
+static ERL_NIF_TERM scan_query(ErlNifEnv *env, int argc,
+                             const ERL_NIF_TERM argv[]) {
+  ErlNifBinary query;
+  ERL_NIF_TERM term;
+
+  if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
+    // add one more byte for the null termination
+    char statement[query.size + 1];
+
+    strncpy(statement, (char *)query.data, query.size);
+
+    // terminate the string
+    statement[query.size] = 0;
+
+    PgQueryScanResult result = pg_query_scan(statement);
+
+    if (result.error) {
+      ERL_NIF_TERM error_map = enif_make_new_map(env);
+
+      if (!enif_make_map_put(
+        env,
+        error_map,
+        enif_make_atom(env, "message"), 
+        make_binary(env, result.error->message),
+        &error_map
+      )) {
+        return enif_raise_exception(env, make_binary(env, "failed to update map"));
+      }
+
+      if (result.error->cursorpos > 0 && !enif_make_map_put(
+        env,
+        error_map,
+        enif_make_atom(env, "cursorpos"), 
+        // drop the cursorpos by one, so it's zero-indexed
+        enif_make_int(env, result.error->cursorpos - 1),
+        &error_map
+      )) {
+        return enif_raise_exception(env, make_binary(env, "failed to update map"));
+      }
+
+      term = enif_make_tuple2(env, enif_make_atom(env, "error"), error_map);
+    } else {
+      term = result_tuple(env, "ok", result.pbuf.data, result.pbuf.len);
+    }
+    pg_query_free_scan_result(result);
+
+    return term;
+  } else {
+    return enif_make_badarg(env);
+  }
+}
+
 static ErlNifFunc funcs[] = {
   {"parse_query", 1, parse_query},
-  {"deparse_query", 1, deparse_query}
+  {"deparse_query", 1, deparse_query},
+  {"scan_query", 1, scan_query}
 };
 
 ERL_NIF_INIT(Elixir.PgQuery.Parser, funcs, NULL, NULL, NULL, NULL)

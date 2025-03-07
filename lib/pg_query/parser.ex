@@ -48,6 +48,23 @@ defmodule PgQuery.Parser do
     end
   end
 
+  def scan(query) when is_binary(query) do
+    with {:ok, proto} <- scan_query(query) do
+      Protox.decode(proto, PgQuery.ScanResult)
+    end
+  end
+
+  def scan!(query) when is_binary(query) do
+    case scan_query(query) do
+      {:ok, proto} ->
+        Protox.decode!(proto, PgQuery.ScanResult)
+
+      {:error, %{message: message}} ->
+        raise Error, message: message
+    end
+  end
+
   def parse_query(_query), do: :erlang.nif_error(:nif_not_loaded)
   def deparse_query(_encoded_proto), do: :erlang.nif_error(:nif_not_loaded)
+  def scan_query(_query), do: :erlang.nif_error(:nif_not_loaded)
 end

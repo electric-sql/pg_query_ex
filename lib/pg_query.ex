@@ -25,4 +25,18 @@ defmodule PgQuery do
   """
   @spec protobuf_to_query!(%PgQuery.ParseResult{}) :: String.t() | no_return()
   defdelegate protobuf_to_query!(parse_result), to: PgQuery.Parser
+
+  @doc """
+  Scans the binary statement `stmt` into tokens.
+  """
+  @spec scan(String.t()) :: {:ok, %PgQuery.ScanResult{}} | {:error, error()}
+  defdelegate scan(stmt), to: PgQuery.Parser
+
+  @doc """
+  Scans the binary statement `stmt` into tokens.
+
+  Raises if the statement is invalid.
+  """
+  @spec scan!(String.t()) :: %PgQuery.ScanResult{} | no_return()
+  defdelegate scan!(stmt), to: PgQuery.Parser
 end
