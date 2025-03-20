@@ -25,7 +25,7 @@ priv/libpg_query_ex.so: priv $(LIBPG_QUERY_PATH)/libpg_query.a c_src/libpg_query
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ c_src/libpg_query_ex.c $(LIBPG_QUERY_PATH)/libpg_query.a
 
 protobuf:
-	MIX_ENV=prod mix protox.generate --output-path=lib/pg_query/proto --multiple-files --keep-unknown-fields=false c_src/libpg_query/protobuf/pg_query.proto
+	MIX_ENV=prod mix protox.generate --output-path=lib/pg_query/proto --multiple-files c_src/libpg_query/protobuf/pg_query.proto
 
 clean:
 	$(MIX) clean

@@ -33,7 +33,7 @@ defmodule PgQuery.Parser do
   end
 
   def protobuf_to_query(%PgQuery.ParseResult{} = parse_result) do
-    with {:ok, encoded} <- Protox.encode(parse_result) do
+    with {:ok, encoded, _size} <- Protox.encode(parse_result) do
       deparse_query(IO.iodata_to_binary(encoded))
     end
   end
