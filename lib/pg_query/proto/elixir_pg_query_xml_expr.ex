@@ -8,6 +8,7 @@ defmodule PgQuery.XmlExpr do
             arg_names: [],
             args: [],
             xmloption: :XML_OPTION_TYPE_UNDEFINED,
+            indent: false,
             type: 0,
             typmod: 0,
             location: 0
@@ -33,6 +34,7 @@ defmodule PgQuery.XmlExpr do
         |> encode_arg_names(msg)
         |> encode_args(msg)
         |> encode_xmloption(msg)
+        |> encode_indent(msg)
         |> encode_type(msg)
         |> encode_typmod(msg)
         |> encode_location(msg)
@@ -151,12 +153,24 @@ defmodule PgQuery.XmlExpr do
             reraise Protox.EncodingError.new(:xmloption, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_indent(acc, msg) do
+        try do
+          if msg.indent == false do
+            acc
+          else
+            [acc, "@", Protox.Encode.encode_bool(msg.indent)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:indent, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_type(acc, msg) do
         try do
           if msg.type == 0 do
             acc
           else
-            [acc, "@", Protox.Encode.encode_uint32(msg.type)]
+            [acc, "H", Protox.Encode.encode_uint32(msg.type)]
           end
         rescue
           ArgumentError ->
@@ -168,7 +182,7 @@ defmodule PgQuery.XmlExpr do
           if msg.typmod == 0 do
             acc
           else
-            [acc, "H", Protox.Encode.encode_int32(msg.typmod)]
+            [acc, "P", Protox.Encode.encode_int32(msg.typmod)]
           end
         rescue
           ArgumentError ->
@@ -180,7 +194,7 @@ defmodule PgQuery.XmlExpr do
           if msg.location == 0 do
             acc
           else
-            [acc, "P", Protox.Encode.encode_int32(msg.location)]
+            [acc, "X", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -258,14 +272,18 @@ defmodule PgQuery.XmlExpr do
               {[xmloption: value], rest}
 
             {8, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[indent: value], rest}
+
+            {9, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[type: value], rest}
 
-            {9, _, bytes} ->
+            {10, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[typmod: value], rest}
 
-            {10, _, bytes} ->
+            {11, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -333,9 +351,10 @@ defmodule PgQuery.XmlExpr do
         5 => {:arg_names, :unpacked, {:message, PgQuery.Node}},
         6 => {:args, :unpacked, {:message, PgQuery.Node}},
         7 => {:xmloption, {:scalar, :XML_OPTION_TYPE_UNDEFINED}, {:enum, PgQuery.XmlOptionType}},
-        8 => {:type, {:scalar, 0}, :uint32},
-        9 => {:typmod, {:scalar, 0}, :int32},
-        10 => {:location, {:scalar, 0}, :int32}
+        8 => {:indent, {:scalar, false}, :bool},
+        9 => {:type, {:scalar, 0}, :uint32},
+        10 => {:typmod, {:scalar, 0}, :int32},
+        11 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -347,12 +366,13 @@ defmodule PgQuery.XmlExpr do
       %{
         arg_names: {5, :unpacked, {:message, PgQuery.Node}},
         args: {6, :unpacked, {:message, PgQuery.Node}},
-        location: {10, {:scalar, 0}, :int32},
+        indent: {8, {:scalar, false}, :bool},
+        location: {11, {:scalar, 0}, :int32},
         name: {3, {:scalar, ""}, :string},
         named_args: {4, :unpacked, {:message, PgQuery.Node}},
         op: {2, {:scalar, :XML_EXPR_OP_UNDEFINED}, {:enum, PgQuery.XmlExprOp}},
-        type: {8, {:scalar, 0}, :uint32},
-        typmod: {9, {:scalar, 0}, :int32},
+        type: {9, {:scalar, 0}, :uint32},
+        typmod: {10, {:scalar, 0}, :int32},
         xmloption: {7, {:scalar, :XML_OPTION_TYPE_UNDEFINED}, {:enum, PgQuery.XmlOptionType}},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
@@ -428,11 +448,20 @@ defmodule PgQuery.XmlExpr do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "indent",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :indent,
+          tag: 8,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "type",
           kind: {:scalar, 0},
           label: :optional,
           name: :type,
-          tag: 8,
+          tag: 9,
           type: :uint32
         },
         %{
@@ -441,7 +470,7 @@ defmodule PgQuery.XmlExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :typmod,
-          tag: 9,
+          tag: 10,
           type: :int32
         },
         %{
@@ -450,7 +479,7 @@ defmodule PgQuery.XmlExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 10,
+          tag: 11,
           type: :int32
         }
       ]
@@ -684,6 +713,35 @@ defmodule PgQuery.XmlExpr do
         []
       ),
       (
+        def field_def(:indent) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "indent",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :indent,
+             tag: 8,
+             type: :bool
+           }}
+        end
+
+        def field_def("indent") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "indent",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :indent,
+             tag: 8,
+             type: :bool
+           }}
+        end
+
+        []
+      ),
+      (
         def field_def(:type) do
           {:ok,
            %{
@@ -692,7 +750,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :type,
-             tag: 8,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -705,7 +763,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :type,
-             tag: 8,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -721,7 +779,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :typmod,
-             tag: 9,
+             tag: 10,
              type: :int32
            }}
         end
@@ -734,7 +792,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :typmod,
-             tag: 9,
+             tag: 10,
              type: :int32
            }}
         end
@@ -750,7 +808,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 10,
+             tag: 11,
              type: :int32
            }}
         end
@@ -763,7 +821,7 @@ defmodule PgQuery.XmlExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 10,
+             tag: 11,
              type: :int32
            }}
         end
@@ -814,6 +872,9 @@ defmodule PgQuery.XmlExpr do
     end,
     def default(:xmloption) do
       {:ok, :XML_OPTION_TYPE_UNDEFINED}
+    end,
+    def default(:indent) do
+      {:ok, false}
     end,
     def default(:type) do
       {:ok, 0}

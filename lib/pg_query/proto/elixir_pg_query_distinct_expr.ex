@@ -3,7 +3,6 @@ defmodule PgQuery.DistinctExpr do
   @moduledoc false
   defstruct xpr: nil,
             opno: 0,
-            opfuncid: 0,
             opresulttype: 0,
             opretset: false,
             opcollid: 0,
@@ -27,7 +26,6 @@ defmodule PgQuery.DistinctExpr do
         []
         |> encode_xpr(msg)
         |> encode_opno(msg)
-        |> encode_opfuncid(msg)
         |> encode_opresulttype(msg)
         |> encode_opretset(msg)
         |> encode_opcollid(msg)
@@ -64,24 +62,12 @@ defmodule PgQuery.DistinctExpr do
             reraise Protox.EncodingError.new(:opno, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_opfuncid(acc, msg) do
-        try do
-          if msg.opfuncid == 0 do
-            acc
-          else
-            [acc, "\x18", Protox.Encode.encode_uint32(msg.opfuncid)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:opfuncid, "invalid field value"), __STACKTRACE__
-        end
-      end,
       defp encode_opresulttype(acc, msg) do
         try do
           if msg.opresulttype == 0 do
             acc
           else
-            [acc, " ", Protox.Encode.encode_uint32(msg.opresulttype)]
+            [acc, "\x18", Protox.Encode.encode_uint32(msg.opresulttype)]
           end
         rescue
           ArgumentError ->
@@ -93,7 +79,7 @@ defmodule PgQuery.DistinctExpr do
           if msg.opretset == false do
             acc
           else
-            [acc, "(", Protox.Encode.encode_bool(msg.opretset)]
+            [acc, " ", Protox.Encode.encode_bool(msg.opretset)]
           end
         rescue
           ArgumentError ->
@@ -105,7 +91,7 @@ defmodule PgQuery.DistinctExpr do
           if msg.opcollid == 0 do
             acc
           else
-            [acc, "0", Protox.Encode.encode_uint32(msg.opcollid)]
+            [acc, "(", Protox.Encode.encode_uint32(msg.opcollid)]
           end
         rescue
           ArgumentError ->
@@ -117,7 +103,7 @@ defmodule PgQuery.DistinctExpr do
           if msg.inputcollid == 0 do
             acc
           else
-            [acc, "8", Protox.Encode.encode_uint32(msg.inputcollid)]
+            [acc, "0", Protox.Encode.encode_uint32(msg.inputcollid)]
           end
         rescue
           ArgumentError ->
@@ -134,7 +120,7 @@ defmodule PgQuery.DistinctExpr do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "B", Protox.Encode.encode_message(value)]
+                  [acc, ":", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -148,7 +134,7 @@ defmodule PgQuery.DistinctExpr do
           if msg.location == 0 do
             acc
           else
-            [acc, "H", Protox.Encode.encode_int32(msg.location)]
+            [acc, "@", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -203,30 +189,26 @@ defmodule PgQuery.DistinctExpr do
 
             {3, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[opfuncid: value], rest}
-
-            {4, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[opresulttype: value], rest}
 
-            {5, _, bytes} ->
+            {4, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[opretset: value], rest}
 
-            {6, _, bytes} ->
+            {5, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[opcollid: value], rest}
 
-            {7, _, bytes} ->
+            {6, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[inputcollid: value], rest}
 
-            {8, _, bytes} ->
+            {7, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[args: msg.args ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {9, _, bytes} ->
+            {8, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -289,13 +271,12 @@ defmodule PgQuery.DistinctExpr do
       %{
         1 => {:xpr, {:scalar, nil}, {:message, PgQuery.Node}},
         2 => {:opno, {:scalar, 0}, :uint32},
-        3 => {:opfuncid, {:scalar, 0}, :uint32},
-        4 => {:opresulttype, {:scalar, 0}, :uint32},
-        5 => {:opretset, {:scalar, false}, :bool},
-        6 => {:opcollid, {:scalar, 0}, :uint32},
-        7 => {:inputcollid, {:scalar, 0}, :uint32},
-        8 => {:args, :unpacked, {:message, PgQuery.Node}},
-        9 => {:location, {:scalar, 0}, :int32}
+        3 => {:opresulttype, {:scalar, 0}, :uint32},
+        4 => {:opretset, {:scalar, false}, :bool},
+        5 => {:opcollid, {:scalar, 0}, :uint32},
+        6 => {:inputcollid, {:scalar, 0}, :uint32},
+        7 => {:args, :unpacked, {:message, PgQuery.Node}},
+        8 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -305,14 +286,13 @@ defmodule PgQuery.DistinctExpr do
           }
     def defs_by_name() do
       %{
-        args: {8, :unpacked, {:message, PgQuery.Node}},
-        inputcollid: {7, {:scalar, 0}, :uint32},
-        location: {9, {:scalar, 0}, :int32},
-        opcollid: {6, {:scalar, 0}, :uint32},
-        opfuncid: {3, {:scalar, 0}, :uint32},
+        args: {7, :unpacked, {:message, PgQuery.Node}},
+        inputcollid: {6, {:scalar, 0}, :uint32},
+        location: {8, {:scalar, 0}, :int32},
+        opcollid: {5, {:scalar, 0}, :uint32},
         opno: {2, {:scalar, 0}, :uint32},
-        opresulttype: {4, {:scalar, 0}, :uint32},
-        opretset: {5, {:scalar, false}, :bool},
+        opresulttype: {3, {:scalar, 0}, :uint32},
+        opretset: {4, {:scalar, false}, :bool},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
@@ -342,20 +322,11 @@ defmodule PgQuery.DistinctExpr do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "opfuncid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :opfuncid,
-          tag: 3,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "opresulttype",
           kind: {:scalar, 0},
           label: :optional,
           name: :opresulttype,
-          tag: 4,
+          tag: 3,
           type: :uint32
         },
         %{
@@ -364,7 +335,7 @@ defmodule PgQuery.DistinctExpr do
           kind: {:scalar, false},
           label: :optional,
           name: :opretset,
-          tag: 5,
+          tag: 4,
           type: :bool
         },
         %{
@@ -373,7 +344,7 @@ defmodule PgQuery.DistinctExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :opcollid,
-          tag: 6,
+          tag: 5,
           type: :uint32
         },
         %{
@@ -382,7 +353,7 @@ defmodule PgQuery.DistinctExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :inputcollid,
-          tag: 7,
+          tag: 6,
           type: :uint32
         },
         %{
@@ -391,7 +362,7 @@ defmodule PgQuery.DistinctExpr do
           kind: :unpacked,
           label: :repeated,
           name: :args,
-          tag: 8,
+          tag: 7,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -400,7 +371,7 @@ defmodule PgQuery.DistinctExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 9,
+          tag: 8,
           type: :int32
         }
       ]
@@ -467,35 +438,6 @@ defmodule PgQuery.DistinctExpr do
         []
       ),
       (
-        def field_def(:opfuncid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "opfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :opfuncid,
-             tag: 3,
-             type: :uint32
-           }}
-        end
-
-        def field_def("opfuncid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "opfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :opfuncid,
-             tag: 3,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
         def field_def(:opresulttype) do
           {:ok,
            %{
@@ -504,7 +446,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :opresulttype,
-             tag: 4,
+             tag: 3,
              type: :uint32
            }}
         end
@@ -517,7 +459,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :opresulttype,
-             tag: 4,
+             tag: 3,
              type: :uint32
            }}
         end
@@ -533,7 +475,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, false},
              label: :optional,
              name: :opretset,
-             tag: 5,
+             tag: 4,
              type: :bool
            }}
         end
@@ -546,7 +488,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, false},
              label: :optional,
              name: :opretset,
-             tag: 5,
+             tag: 4,
              type: :bool
            }}
         end
@@ -562,7 +504,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :opcollid,
-             tag: 6,
+             tag: 5,
              type: :uint32
            }}
         end
@@ -575,7 +517,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :opcollid,
-             tag: 6,
+             tag: 5,
              type: :uint32
            }}
         end
@@ -591,7 +533,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :inputcollid,
-             tag: 7,
+             tag: 6,
              type: :uint32
            }}
         end
@@ -604,7 +546,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :inputcollid,
-             tag: 7,
+             tag: 6,
              type: :uint32
            }}
         end
@@ -620,7 +562,7 @@ defmodule PgQuery.DistinctExpr do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 8,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -633,7 +575,7 @@ defmodule PgQuery.DistinctExpr do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 8,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -649,7 +591,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 9,
+             tag: 8,
              type: :int32
            }}
         end
@@ -662,7 +604,7 @@ defmodule PgQuery.DistinctExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 9,
+             tag: 8,
              type: :int32
            }}
         end
@@ -697,9 +639,6 @@ defmodule PgQuery.DistinctExpr do
       {:ok, nil}
     end,
     def default(:opno) do
-      {:ok, 0}
-    end,
-    def default(:opfuncid) do
       {:ok, 0}
     end,
     def default(:opresulttype) do

@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.PartitionSpec do
   @moduledoc false
-  defstruct strategy: "", part_params: [], location: 0
+  defstruct strategy: :PARTITION_STRATEGY_UNDEFINED, part_params: [], location: 0
 
   (
     (
@@ -25,10 +25,14 @@ defmodule PgQuery.PartitionSpec do
     [
       defp encode_strategy(acc, msg) do
         try do
-          if msg.strategy == "" do
+          if msg.strategy == :PARTITION_STRATEGY_UNDEFINED do
             acc
           else
-            [acc, "\n", Protox.Encode.encode_string(msg.strategy)]
+            [
+              acc,
+              "\b",
+              msg.strategy |> PgQuery.PartitionStrategy.encode() |> Protox.Encode.encode_enum()
+            ]
           end
         rescue
           ArgumentError ->
@@ -104,9 +108,8 @@ defmodule PgQuery.PartitionSpec do
               raise %Protox.IllegalTagError{}
 
             {1, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[strategy: delimited], rest}
+              {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.PartitionStrategy)
+              {[strategy: value], rest}
 
             {2, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
@@ -174,7 +177,9 @@ defmodule PgQuery.PartitionSpec do
           }
     def defs() do
       %{
-        1 => {:strategy, {:scalar, ""}, :string},
+        1 =>
+          {:strategy, {:scalar, :PARTITION_STRATEGY_UNDEFINED},
+           {:enum, PgQuery.PartitionStrategy}},
         2 => {:part_params, :unpacked, {:message, PgQuery.Node}},
         3 => {:location, {:scalar, 0}, :int32}
       }
@@ -188,7 +193,8 @@ defmodule PgQuery.PartitionSpec do
       %{
         location: {3, {:scalar, 0}, :int32},
         part_params: {2, :unpacked, {:message, PgQuery.Node}},
-        strategy: {1, {:scalar, ""}, :string}
+        strategy:
+          {1, {:scalar, :PARTITION_STRATEGY_UNDEFINED}, {:enum, PgQuery.PartitionStrategy}}
       }
     end
   )
@@ -200,11 +206,11 @@ defmodule PgQuery.PartitionSpec do
         %{
           __struct__: Protox.Field,
           json_name: "strategy",
-          kind: {:scalar, ""},
+          kind: {:scalar, :PARTITION_STRATEGY_UNDEFINED},
           label: :optional,
           name: :strategy,
           tag: 1,
-          type: :string
+          type: {:enum, PgQuery.PartitionStrategy}
         },
         %{
           __struct__: Protox.Field,
@@ -235,11 +241,11 @@ defmodule PgQuery.PartitionSpec do
            %{
              __struct__: Protox.Field,
              json_name: "strategy",
-             kind: {:scalar, ""},
+             kind: {:scalar, :PARTITION_STRATEGY_UNDEFINED},
              label: :optional,
              name: :strategy,
              tag: 1,
-             type: :string
+             type: {:enum, PgQuery.PartitionStrategy}
            }}
         end
 
@@ -248,11 +254,11 @@ defmodule PgQuery.PartitionSpec do
            %{
              __struct__: Protox.Field,
              json_name: "strategy",
-             kind: {:scalar, ""},
+             kind: {:scalar, :PARTITION_STRATEGY_UNDEFINED},
              label: :optional,
              name: :strategy,
              tag: 1,
-             type: :string
+             type: {:enum, PgQuery.PartitionStrategy}
            }}
         end
 
@@ -352,7 +358,7 @@ defmodule PgQuery.PartitionSpec do
   [
     @spec(default(atom) :: {:ok, boolean | integer | String.t() | float} | {:error, atom}),
     def default(:strategy) do
-      {:ok, ""}
+      {:ok, :PARTITION_STRATEGY_UNDEFINED}
     end,
     def default(:part_params) do
       {:error, :no_default_value}

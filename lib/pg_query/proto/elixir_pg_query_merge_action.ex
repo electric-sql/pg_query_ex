@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.MergeAction do
   @moduledoc false
-  defstruct matched: false,
+  defstruct match_kind: :MERGE_MATCH_KIND_UNDEFINED,
             command_type: :CMD_TYPE_UNDEFINED,
             override: :OVERRIDING_KIND_UNDEFINED,
             qual: nil,
@@ -22,7 +22,7 @@ defmodule PgQuery.MergeAction do
       @spec encode!(struct) :: iodata | no_return
       def encode!(msg) do
         []
-        |> encode_matched(msg)
+        |> encode_match_kind(msg)
         |> encode_command_type(msg)
         |> encode_override(msg)
         |> encode_qual(msg)
@@ -34,16 +34,20 @@ defmodule PgQuery.MergeAction do
     []
 
     [
-      defp encode_matched(acc, msg) do
+      defp encode_match_kind(acc, msg) do
         try do
-          if msg.matched == false do
+          if msg.match_kind == :MERGE_MATCH_KIND_UNDEFINED do
             acc
           else
-            [acc, "\b", Protox.Encode.encode_bool(msg.matched)]
+            [
+              acc,
+              "\b",
+              msg.match_kind |> PgQuery.MergeMatchKind.encode() |> Protox.Encode.encode_enum()
+            ]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:matched, "invalid field value"), __STACKTRACE__
+            reraise Protox.EncodingError.new(:match_kind, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_command_type(acc, msg) do
@@ -167,8 +171,8 @@ defmodule PgQuery.MergeAction do
               raise %Protox.IllegalTagError{}
 
             {1, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[matched: value], rest}
+              {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.MergeMatchKind)
+              {[match_kind: value], rest}
 
             {2, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.CmdType)
@@ -250,7 +254,8 @@ defmodule PgQuery.MergeAction do
           }
     def defs() do
       %{
-        1 => {:matched, {:scalar, false}, :bool},
+        1 =>
+          {:match_kind, {:scalar, :MERGE_MATCH_KIND_UNDEFINED}, {:enum, PgQuery.MergeMatchKind}},
         2 => {:command_type, {:scalar, :CMD_TYPE_UNDEFINED}, {:enum, PgQuery.CmdType}},
         3 => {:override, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
         4 => {:qual, {:scalar, nil}, {:message, PgQuery.Node}},
@@ -266,7 +271,7 @@ defmodule PgQuery.MergeAction do
     def defs_by_name() do
       %{
         command_type: {2, {:scalar, :CMD_TYPE_UNDEFINED}, {:enum, PgQuery.CmdType}},
-        matched: {1, {:scalar, false}, :bool},
+        match_kind: {1, {:scalar, :MERGE_MATCH_KIND_UNDEFINED}, {:enum, PgQuery.MergeMatchKind}},
         override: {3, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
         qual: {4, {:scalar, nil}, {:message, PgQuery.Node}},
         target_list: {5, :unpacked, {:message, PgQuery.Node}},
@@ -281,12 +286,12 @@ defmodule PgQuery.MergeAction do
       [
         %{
           __struct__: Protox.Field,
-          json_name: "matched",
-          kind: {:scalar, false},
+          json_name: "matchKind",
+          kind: {:scalar, :MERGE_MATCH_KIND_UNDEFINED},
           label: :optional,
-          name: :matched,
+          name: :match_kind,
           tag: 1,
-          type: :bool
+          type: {:enum, PgQuery.MergeMatchKind}
         },
         %{
           __struct__: Protox.Field,
@@ -339,33 +344,44 @@ defmodule PgQuery.MergeAction do
     [
       @spec(field_def(atom) :: {:ok, Protox.Field.t()} | {:error, :no_such_field}),
       (
-        def field_def(:matched) do
+        def field_def(:match_kind) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "matched",
-             kind: {:scalar, false},
+             json_name: "matchKind",
+             kind: {:scalar, :MERGE_MATCH_KIND_UNDEFINED},
              label: :optional,
-             name: :matched,
+             name: :match_kind,
              tag: 1,
-             type: :bool
+             type: {:enum, PgQuery.MergeMatchKind}
            }}
         end
 
-        def field_def("matched") do
+        def field_def("matchKind") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "matched",
-             kind: {:scalar, false},
+             json_name: "matchKind",
+             kind: {:scalar, :MERGE_MATCH_KIND_UNDEFINED},
              label: :optional,
-             name: :matched,
+             name: :match_kind,
              tag: 1,
-             type: :bool
+             type: {:enum, PgQuery.MergeMatchKind}
            }}
         end
 
-        []
+        def field_def("match_kind") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "matchKind",
+             kind: {:scalar, :MERGE_MATCH_KIND_UNDEFINED},
+             label: :optional,
+             name: :match_kind,
+             tag: 1,
+             type: {:enum, PgQuery.MergeMatchKind}
+           }}
+        end
       ),
       (
         def field_def(:command_type) do
@@ -569,8 +585,8 @@ defmodule PgQuery.MergeAction do
 
   [
     @spec(default(atom) :: {:ok, boolean | integer | String.t() | float} | {:error, atom}),
-    def default(:matched) do
-      {:ok, false}
+    def default(:match_kind) do
+      {:ok, :MERGE_MATCH_KIND_UNDEFINED}
     end,
     def default(:command_type) do
       {:ok, :CMD_TYPE_UNDEFINED}

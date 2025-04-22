@@ -7,9 +7,8 @@ defmodule PgQuery.Var do
             vartype: 0,
             vartypmod: 0,
             varcollid: 0,
+            varnullingrels: [],
             varlevelsup: 0,
-            varnosyn: 0,
-            varattnosyn: 0,
             location: 0
 
   (
@@ -32,9 +31,8 @@ defmodule PgQuery.Var do
         |> encode_vartype(msg)
         |> encode_vartypmod(msg)
         |> encode_varcollid(msg)
+        |> encode_varnullingrels(msg)
         |> encode_varlevelsup(msg)
-        |> encode_varnosyn(msg)
-        |> encode_varattnosyn(msg)
         |> encode_location(msg)
       end
     )
@@ -114,40 +112,43 @@ defmodule PgQuery.Var do
             reraise Protox.EncodingError.new(:varcollid, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_varnullingrels(acc, msg) do
+        try do
+          case msg.varnullingrels do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                ":",
+                (
+                  {bytes, len} =
+                    Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
+                      value_bytes = :binary.list_to_bin([Protox.Encode.encode_uint64(value)])
+                      {[acc, value_bytes], len + byte_size(value_bytes)}
+                    end)
+
+                  [Protox.Varint.encode(len), bytes]
+                )
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:varnullingrels, "invalid field value"),
+                    __STACKTRACE__
+        end
+      end,
       defp encode_varlevelsup(acc, msg) do
         try do
           if msg.varlevelsup == 0 do
             acc
           else
-            [acc, "8", Protox.Encode.encode_uint32(msg.varlevelsup)]
+            [acc, "@", Protox.Encode.encode_uint32(msg.varlevelsup)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:varlevelsup, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_varnosyn(acc, msg) do
-        try do
-          if msg.varnosyn == 0 do
-            acc
-          else
-            [acc, "@", Protox.Encode.encode_uint32(msg.varnosyn)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:varnosyn, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_varattnosyn(acc, msg) do
-        try do
-          if msg.varattnosyn == 0 do
-            acc
-          else
-            [acc, "H", Protox.Encode.encode_int32(msg.varattnosyn)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:varattnosyn, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_location(acc, msg) do
@@ -155,7 +156,7 @@ defmodule PgQuery.Var do
           if msg.location == 0 do
             acc
           else
-            [acc, "P", Protox.Encode.encode_int32(msg.location)]
+            [acc, "H", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -224,19 +225,24 @@ defmodule PgQuery.Var do
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[varcollid: value], rest}
 
+            {7, 2, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+
+              {[
+                 varnullingrels:
+                   msg.varnullingrels ++ Protox.Decode.parse_repeated_uint64([], delimited)
+               ], rest}
+
             {7, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[varlevelsup: value], rest}
+              {value, rest} = Protox.Decode.parse_uint64(bytes)
+              {[varnullingrels: msg.varnullingrels ++ [value]], rest}
 
             {8, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[varnosyn: value], rest}
+              {[varlevelsup: value], rest}
 
             {9, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_int32(bytes)
-              {[varattnosyn: value], rest}
-
-            {10, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -303,10 +309,9 @@ defmodule PgQuery.Var do
         4 => {:vartype, {:scalar, 0}, :uint32},
         5 => {:vartypmod, {:scalar, 0}, :int32},
         6 => {:varcollid, {:scalar, 0}, :uint32},
-        7 => {:varlevelsup, {:scalar, 0}, :uint32},
-        8 => {:varnosyn, {:scalar, 0}, :uint32},
-        9 => {:varattnosyn, {:scalar, 0}, :int32},
-        10 => {:location, {:scalar, 0}, :int32}
+        7 => {:varnullingrels, :packed, :uint64},
+        8 => {:varlevelsup, {:scalar, 0}, :uint32},
+        9 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -316,13 +321,12 @@ defmodule PgQuery.Var do
           }
     def defs_by_name() do
       %{
-        location: {10, {:scalar, 0}, :int32},
+        location: {9, {:scalar, 0}, :int32},
         varattno: {3, {:scalar, 0}, :int32},
-        varattnosyn: {9, {:scalar, 0}, :int32},
         varcollid: {6, {:scalar, 0}, :uint32},
-        varlevelsup: {7, {:scalar, 0}, :uint32},
+        varlevelsup: {8, {:scalar, 0}, :uint32},
         varno: {2, {:scalar, 0}, :int32},
-        varnosyn: {8, {:scalar, 0}, :uint32},
+        varnullingrels: {7, :packed, :uint64},
         vartype: {4, {:scalar, 0}, :uint32},
         vartypmod: {5, {:scalar, 0}, :int32},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
@@ -390,30 +394,21 @@ defmodule PgQuery.Var do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "varnullingrels",
+          kind: :packed,
+          label: :repeated,
+          name: :varnullingrels,
+          tag: 7,
+          type: :uint64
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "varlevelsup",
           kind: {:scalar, 0},
           label: :optional,
           name: :varlevelsup,
-          tag: 7,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "varnosyn",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :varnosyn,
           tag: 8,
           type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "varattnosyn",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :varattnosyn,
-          tag: 9,
-          type: :int32
         },
         %{
           __struct__: Protox.Field,
@@ -421,7 +416,7 @@ defmodule PgQuery.Var do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 10,
+          tag: 9,
           type: :int32
         }
       ]
@@ -604,6 +599,35 @@ defmodule PgQuery.Var do
         []
       ),
       (
+        def field_def(:varnullingrels) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "varnullingrels",
+             kind: :packed,
+             label: :repeated,
+             name: :varnullingrels,
+             tag: 7,
+             type: :uint64
+           }}
+        end
+
+        def field_def("varnullingrels") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "varnullingrels",
+             kind: :packed,
+             label: :repeated,
+             name: :varnullingrels,
+             tag: 7,
+             type: :uint64
+           }}
+        end
+
+        []
+      ),
+      (
         def field_def(:varlevelsup) do
           {:ok,
            %{
@@ -612,7 +636,7 @@ defmodule PgQuery.Var do
              kind: {:scalar, 0},
              label: :optional,
              name: :varlevelsup,
-             tag: 7,
+             tag: 8,
              type: :uint32
            }}
         end
@@ -625,66 +649,8 @@ defmodule PgQuery.Var do
              kind: {:scalar, 0},
              label: :optional,
              name: :varlevelsup,
-             tag: 7,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:varnosyn) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "varnosyn",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :varnosyn,
              tag: 8,
              type: :uint32
-           }}
-        end
-
-        def field_def("varnosyn") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "varnosyn",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :varnosyn,
-             tag: 8,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:varattnosyn) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "varattnosyn",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :varattnosyn,
-             tag: 9,
-             type: :int32
-           }}
-        end
-
-        def field_def("varattnosyn") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "varattnosyn",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :varattnosyn,
-             tag: 9,
-             type: :int32
            }}
         end
 
@@ -699,7 +665,7 @@ defmodule PgQuery.Var do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 10,
+             tag: 9,
              type: :int32
            }}
         end
@@ -712,7 +678,7 @@ defmodule PgQuery.Var do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 10,
+             tag: 9,
              type: :int32
            }}
         end
@@ -761,13 +727,10 @@ defmodule PgQuery.Var do
     def default(:varcollid) do
       {:ok, 0}
     end,
+    def default(:varnullingrels) do
+      {:error, :no_default_value}
+    end,
     def default(:varlevelsup) do
-      {:ok, 0}
-    end,
-    def default(:varnosyn) do
-      {:ok, 0}
-    end,
-    def default(:varattnosyn) do
       {:ok, 0}
     end,
     def default(:location) do

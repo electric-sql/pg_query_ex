@@ -77,21 +77,30 @@ defmodule PgQuery.JoinType do
         end
       ),
       (
-        def encode(:JOIN_UNIQUE_OUTER) do
+        def encode(:JOIN_RIGHT_ANTI) do
           7
         end
 
-        def encode("JOIN_UNIQUE_OUTER") do
+        def encode("JOIN_RIGHT_ANTI") do
           7
         end
       ),
       (
-        def encode(:JOIN_UNIQUE_INNER) do
+        def encode(:JOIN_UNIQUE_OUTER) do
           8
         end
 
-        def encode("JOIN_UNIQUE_INNER") do
+        def encode("JOIN_UNIQUE_OUTER") do
           8
+        end
+      ),
+      (
+        def encode(:JOIN_UNIQUE_INNER) do
+          9
+        end
+
+        def encode("JOIN_UNIQUE_INNER") do
+          9
         end
       )
     ]
@@ -124,9 +133,12 @@ defmodule PgQuery.JoinType do
         :JOIN_ANTI
       end,
       def decode(7) do
-        :JOIN_UNIQUE_OUTER
+        :JOIN_RIGHT_ANTI
       end,
       def decode(8) do
+        :JOIN_UNIQUE_OUTER
+      end,
+      def decode(9) do
         :JOIN_UNIQUE_INNER
       end
     ]
@@ -145,8 +157,9 @@ defmodule PgQuery.JoinType do
         {4, :JOIN_RIGHT},
         {5, :JOIN_SEMI},
         {6, :JOIN_ANTI},
-        {7, :JOIN_UNIQUE_OUTER},
-        {8, :JOIN_UNIQUE_INNER}
+        {7, :JOIN_RIGHT_ANTI},
+        {8, :JOIN_UNIQUE_OUTER},
+        {9, :JOIN_UNIQUE_INNER}
       ]
     end
 
@@ -172,6 +185,9 @@ defmodule PgQuery.JoinType do
           true
         end,
         def has_constant?(:JOIN_ANTI) do
+          true
+        end,
+        def has_constant?(:JOIN_RIGHT_ANTI) do
           true
         end,
         def has_constant?(:JOIN_UNIQUE_OUTER) do

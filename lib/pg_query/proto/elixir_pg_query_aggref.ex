@@ -6,7 +6,6 @@ defmodule PgQuery.Aggref do
             aggtype: 0,
             aggcollid: 0,
             inputcollid: 0,
-            aggtranstype: 0,
             aggargtypes: [],
             aggdirectargs: [],
             args: [],
@@ -41,7 +40,6 @@ defmodule PgQuery.Aggref do
         |> encode_aggtype(msg)
         |> encode_aggcollid(msg)
         |> encode_inputcollid(msg)
-        |> encode_aggtranstype(msg)
         |> encode_aggargtypes(msg)
         |> encode_aggdirectargs(msg)
         |> encode_args(msg)
@@ -122,18 +120,6 @@ defmodule PgQuery.Aggref do
             reraise Protox.EncodingError.new(:inputcollid, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_aggtranstype(acc, msg) do
-        try do
-          if msg.aggtranstype == 0 do
-            acc
-          else
-            [acc, "0", Protox.Encode.encode_uint32(msg.aggtranstype)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:aggtranstype, "invalid field value"), __STACKTRACE__
-        end
-      end,
       defp encode_aggargtypes(acc, msg) do
         try do
           case msg.aggargtypes do
@@ -144,7 +130,7 @@ defmodule PgQuery.Aggref do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, ":", Protox.Encode.encode_message(value)]
+                  [acc, "2", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -163,7 +149,7 @@ defmodule PgQuery.Aggref do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "B", Protox.Encode.encode_message(value)]
+                  [acc, ":", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -183,7 +169,7 @@ defmodule PgQuery.Aggref do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "J", Protox.Encode.encode_message(value)]
+                  [acc, "B", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -202,7 +188,7 @@ defmodule PgQuery.Aggref do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "R", Protox.Encode.encode_message(value)]
+                  [acc, "J", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -221,7 +207,7 @@ defmodule PgQuery.Aggref do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "Z", Protox.Encode.encode_message(value)]
+                  [acc, "R", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -235,7 +221,7 @@ defmodule PgQuery.Aggref do
           if msg.aggfilter == nil do
             acc
           else
-            [acc, "b", Protox.Encode.encode_message(msg.aggfilter)]
+            [acc, "Z", Protox.Encode.encode_message(msg.aggfilter)]
           end
         rescue
           ArgumentError ->
@@ -247,7 +233,7 @@ defmodule PgQuery.Aggref do
           if msg.aggstar == false do
             acc
           else
-            [acc, "h", Protox.Encode.encode_bool(msg.aggstar)]
+            [acc, "`", Protox.Encode.encode_bool(msg.aggstar)]
           end
         rescue
           ArgumentError ->
@@ -259,7 +245,7 @@ defmodule PgQuery.Aggref do
           if msg.aggvariadic == false do
             acc
           else
-            [acc, "p", Protox.Encode.encode_bool(msg.aggvariadic)]
+            [acc, "h", Protox.Encode.encode_bool(msg.aggvariadic)]
           end
         rescue
           ArgumentError ->
@@ -271,7 +257,7 @@ defmodule PgQuery.Aggref do
           if msg.aggkind == "" do
             acc
           else
-            [acc, "z", Protox.Encode.encode_string(msg.aggkind)]
+            [acc, "r", Protox.Encode.encode_string(msg.aggkind)]
           end
         rescue
           ArgumentError ->
@@ -283,7 +269,7 @@ defmodule PgQuery.Aggref do
           if msg.agglevelsup == 0 do
             acc
           else
-            [acc, "\x80\x01", Protox.Encode.encode_uint32(msg.agglevelsup)]
+            [acc, "x", Protox.Encode.encode_uint32(msg.agglevelsup)]
           end
         rescue
           ArgumentError ->
@@ -297,7 +283,7 @@ defmodule PgQuery.Aggref do
           else
             [
               acc,
-              "\x88\x01",
+              "\x80\x01",
               msg.aggsplit |> PgQuery.AggSplit.encode() |> Protox.Encode.encode_enum()
             ]
           end
@@ -311,7 +297,7 @@ defmodule PgQuery.Aggref do
           if msg.aggno == 0 do
             acc
           else
-            [acc, "\x90\x01", Protox.Encode.encode_int32(msg.aggno)]
+            [acc, "\x88\x01", Protox.Encode.encode_int32(msg.aggno)]
           end
         rescue
           ArgumentError ->
@@ -323,7 +309,7 @@ defmodule PgQuery.Aggref do
           if msg.aggtransno == 0 do
             acc
           else
-            [acc, "\x98\x01", Protox.Encode.encode_int32(msg.aggtransno)]
+            [acc, "\x90\x01", Protox.Encode.encode_int32(msg.aggtransno)]
           end
         rescue
           ArgumentError ->
@@ -335,7 +321,7 @@ defmodule PgQuery.Aggref do
           if msg.location == 0 do
             acc
           else
-            [acc, "\xA0\x01", Protox.Encode.encode_int32(msg.location)]
+            [acc, "\x98\x01", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -401,35 +387,31 @@ defmodule PgQuery.Aggref do
               {[inputcollid: value], rest}
 
             {6, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[aggtranstype: value], rest}
-
-            {7, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[aggargtypes: msg.aggargtypes ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {8, _, bytes} ->
+            {7, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[aggdirectargs: msg.aggdirectargs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {9, _, bytes} ->
+            {8, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[args: msg.args ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {10, _, bytes} ->
+            {9, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[aggorder: msg.aggorder ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {11, _, bytes} ->
+            {10, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[aggdistinct: msg.aggdistinct ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {12, _, bytes} ->
+            {11, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -438,36 +420,36 @@ defmodule PgQuery.Aggref do
                    Protox.MergeMessage.merge(msg.aggfilter, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {13, _, bytes} ->
+            {12, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[aggstar: value], rest}
 
-            {14, _, bytes} ->
+            {13, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[aggvariadic: value], rest}
 
-            {15, _, bytes} ->
+            {14, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[aggkind: delimited], rest}
 
-            {16, _, bytes} ->
+            {15, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[agglevelsup: value], rest}
 
-            {17, _, bytes} ->
+            {16, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.AggSplit)
               {[aggsplit: value], rest}
 
-            {18, _, bytes} ->
+            {17, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[aggno: value], rest}
 
-            {19, _, bytes} ->
+            {18, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[aggtransno: value], rest}
 
-            {20, _, bytes} ->
+            {19, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -533,21 +515,20 @@ defmodule PgQuery.Aggref do
         3 => {:aggtype, {:scalar, 0}, :uint32},
         4 => {:aggcollid, {:scalar, 0}, :uint32},
         5 => {:inputcollid, {:scalar, 0}, :uint32},
-        6 => {:aggtranstype, {:scalar, 0}, :uint32},
-        7 => {:aggargtypes, :unpacked, {:message, PgQuery.Node}},
-        8 => {:aggdirectargs, :unpacked, {:message, PgQuery.Node}},
-        9 => {:args, :unpacked, {:message, PgQuery.Node}},
-        10 => {:aggorder, :unpacked, {:message, PgQuery.Node}},
-        11 => {:aggdistinct, :unpacked, {:message, PgQuery.Node}},
-        12 => {:aggfilter, {:scalar, nil}, {:message, PgQuery.Node}},
-        13 => {:aggstar, {:scalar, false}, :bool},
-        14 => {:aggvariadic, {:scalar, false}, :bool},
-        15 => {:aggkind, {:scalar, ""}, :string},
-        16 => {:agglevelsup, {:scalar, 0}, :uint32},
-        17 => {:aggsplit, {:scalar, :AGG_SPLIT_UNDEFINED}, {:enum, PgQuery.AggSplit}},
-        18 => {:aggno, {:scalar, 0}, :int32},
-        19 => {:aggtransno, {:scalar, 0}, :int32},
-        20 => {:location, {:scalar, 0}, :int32}
+        6 => {:aggargtypes, :unpacked, {:message, PgQuery.Node}},
+        7 => {:aggdirectargs, :unpacked, {:message, PgQuery.Node}},
+        8 => {:args, :unpacked, {:message, PgQuery.Node}},
+        9 => {:aggorder, :unpacked, {:message, PgQuery.Node}},
+        10 => {:aggdistinct, :unpacked, {:message, PgQuery.Node}},
+        11 => {:aggfilter, {:scalar, nil}, {:message, PgQuery.Node}},
+        12 => {:aggstar, {:scalar, false}, :bool},
+        13 => {:aggvariadic, {:scalar, false}, :bool},
+        14 => {:aggkind, {:scalar, ""}, :string},
+        15 => {:agglevelsup, {:scalar, 0}, :uint32},
+        16 => {:aggsplit, {:scalar, :AGG_SPLIT_UNDEFINED}, {:enum, PgQuery.AggSplit}},
+        17 => {:aggno, {:scalar, 0}, :int32},
+        18 => {:aggtransno, {:scalar, 0}, :int32},
+        19 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -557,25 +538,24 @@ defmodule PgQuery.Aggref do
           }
     def defs_by_name() do
       %{
-        aggargtypes: {7, :unpacked, {:message, PgQuery.Node}},
+        aggargtypes: {6, :unpacked, {:message, PgQuery.Node}},
         aggcollid: {4, {:scalar, 0}, :uint32},
-        aggdirectargs: {8, :unpacked, {:message, PgQuery.Node}},
-        aggdistinct: {11, :unpacked, {:message, PgQuery.Node}},
-        aggfilter: {12, {:scalar, nil}, {:message, PgQuery.Node}},
+        aggdirectargs: {7, :unpacked, {:message, PgQuery.Node}},
+        aggdistinct: {10, :unpacked, {:message, PgQuery.Node}},
+        aggfilter: {11, {:scalar, nil}, {:message, PgQuery.Node}},
         aggfnoid: {2, {:scalar, 0}, :uint32},
-        aggkind: {15, {:scalar, ""}, :string},
-        agglevelsup: {16, {:scalar, 0}, :uint32},
-        aggno: {18, {:scalar, 0}, :int32},
-        aggorder: {10, :unpacked, {:message, PgQuery.Node}},
-        aggsplit: {17, {:scalar, :AGG_SPLIT_UNDEFINED}, {:enum, PgQuery.AggSplit}},
-        aggstar: {13, {:scalar, false}, :bool},
-        aggtransno: {19, {:scalar, 0}, :int32},
-        aggtranstype: {6, {:scalar, 0}, :uint32},
+        aggkind: {14, {:scalar, ""}, :string},
+        agglevelsup: {15, {:scalar, 0}, :uint32},
+        aggno: {17, {:scalar, 0}, :int32},
+        aggorder: {9, :unpacked, {:message, PgQuery.Node}},
+        aggsplit: {16, {:scalar, :AGG_SPLIT_UNDEFINED}, {:enum, PgQuery.AggSplit}},
+        aggstar: {12, {:scalar, false}, :bool},
+        aggtransno: {18, {:scalar, 0}, :int32},
         aggtype: {3, {:scalar, 0}, :uint32},
-        aggvariadic: {14, {:scalar, false}, :bool},
-        args: {9, :unpacked, {:message, PgQuery.Node}},
+        aggvariadic: {13, {:scalar, false}, :bool},
+        args: {8, :unpacked, {:message, PgQuery.Node}},
         inputcollid: {5, {:scalar, 0}, :uint32},
-        location: {20, {:scalar, 0}, :int32},
+        location: {19, {:scalar, 0}, :int32},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
@@ -632,20 +612,11 @@ defmodule PgQuery.Aggref do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "aggtranstype",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :aggtranstype,
-          tag: 6,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "aggargtypes",
           kind: :unpacked,
           label: :repeated,
           name: :aggargtypes,
-          tag: 7,
+          tag: 6,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -654,7 +625,7 @@ defmodule PgQuery.Aggref do
           kind: :unpacked,
           label: :repeated,
           name: :aggdirectargs,
-          tag: 8,
+          tag: 7,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -663,7 +634,7 @@ defmodule PgQuery.Aggref do
           kind: :unpacked,
           label: :repeated,
           name: :args,
-          tag: 9,
+          tag: 8,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -672,7 +643,7 @@ defmodule PgQuery.Aggref do
           kind: :unpacked,
           label: :repeated,
           name: :aggorder,
-          tag: 10,
+          tag: 9,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -681,7 +652,7 @@ defmodule PgQuery.Aggref do
           kind: :unpacked,
           label: :repeated,
           name: :aggdistinct,
-          tag: 11,
+          tag: 10,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -690,7 +661,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, nil},
           label: :optional,
           name: :aggfilter,
-          tag: 12,
+          tag: 11,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -699,7 +670,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, false},
           label: :optional,
           name: :aggstar,
-          tag: 13,
+          tag: 12,
           type: :bool
         },
         %{
@@ -708,7 +679,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, false},
           label: :optional,
           name: :aggvariadic,
-          tag: 14,
+          tag: 13,
           type: :bool
         },
         %{
@@ -717,7 +688,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, ""},
           label: :optional,
           name: :aggkind,
-          tag: 15,
+          tag: 14,
           type: :string
         },
         %{
@@ -726,7 +697,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, 0},
           label: :optional,
           name: :agglevelsup,
-          tag: 16,
+          tag: 15,
           type: :uint32
         },
         %{
@@ -735,7 +706,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, :AGG_SPLIT_UNDEFINED},
           label: :optional,
           name: :aggsplit,
-          tag: 17,
+          tag: 16,
           type: {:enum, PgQuery.AggSplit}
         },
         %{
@@ -744,7 +715,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, 0},
           label: :optional,
           name: :aggno,
-          tag: 18,
+          tag: 17,
           type: :int32
         },
         %{
@@ -753,7 +724,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, 0},
           label: :optional,
           name: :aggtransno,
-          tag: 19,
+          tag: 18,
           type: :int32
         },
         %{
@@ -762,7 +733,7 @@ defmodule PgQuery.Aggref do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 20,
+          tag: 19,
           type: :int32
         }
       ]
@@ -916,35 +887,6 @@ defmodule PgQuery.Aggref do
         []
       ),
       (
-        def field_def(:aggtranstype) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "aggtranstype",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :aggtranstype,
-             tag: 6,
-             type: :uint32
-           }}
-        end
-
-        def field_def("aggtranstype") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "aggtranstype",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :aggtranstype,
-             tag: 6,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
         def field_def(:aggargtypes) do
           {:ok,
            %{
@@ -953,7 +895,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggargtypes,
-             tag: 7,
+             tag: 6,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -966,7 +908,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggargtypes,
-             tag: 7,
+             tag: 6,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -982,7 +924,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggdirectargs,
-             tag: 8,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -995,7 +937,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggdirectargs,
-             tag: 8,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1011,7 +953,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 9,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1024,7 +966,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 9,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1040,7 +982,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggorder,
-             tag: 10,
+             tag: 9,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1053,7 +995,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggorder,
-             tag: 10,
+             tag: 9,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1069,7 +1011,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggdistinct,
-             tag: 11,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1082,7 +1024,7 @@ defmodule PgQuery.Aggref do
              kind: :unpacked,
              label: :repeated,
              name: :aggdistinct,
-             tag: 11,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1098,7 +1040,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, nil},
              label: :optional,
              name: :aggfilter,
-             tag: 12,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1111,7 +1053,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, nil},
              label: :optional,
              name: :aggfilter,
-             tag: 12,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1127,7 +1069,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, false},
              label: :optional,
              name: :aggstar,
-             tag: 13,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1140,7 +1082,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, false},
              label: :optional,
              name: :aggstar,
-             tag: 13,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1156,7 +1098,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, false},
              label: :optional,
              name: :aggvariadic,
-             tag: 14,
+             tag: 13,
              type: :bool
            }}
         end
@@ -1169,7 +1111,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, false},
              label: :optional,
              name: :aggvariadic,
-             tag: 14,
+             tag: 13,
              type: :bool
            }}
         end
@@ -1185,7 +1127,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, ""},
              label: :optional,
              name: :aggkind,
-             tag: 15,
+             tag: 14,
              type: :string
            }}
         end
@@ -1198,7 +1140,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, ""},
              label: :optional,
              name: :aggkind,
-             tag: 15,
+             tag: 14,
              type: :string
            }}
         end
@@ -1214,7 +1156,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :agglevelsup,
-             tag: 16,
+             tag: 15,
              type: :uint32
            }}
         end
@@ -1227,7 +1169,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :agglevelsup,
-             tag: 16,
+             tag: 15,
              type: :uint32
            }}
         end
@@ -1243,7 +1185,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, :AGG_SPLIT_UNDEFINED},
              label: :optional,
              name: :aggsplit,
-             tag: 17,
+             tag: 16,
              type: {:enum, PgQuery.AggSplit}
            }}
         end
@@ -1256,7 +1198,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, :AGG_SPLIT_UNDEFINED},
              label: :optional,
              name: :aggsplit,
-             tag: 17,
+             tag: 16,
              type: {:enum, PgQuery.AggSplit}
            }}
         end
@@ -1272,7 +1214,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :aggno,
-             tag: 18,
+             tag: 17,
              type: :int32
            }}
         end
@@ -1285,7 +1227,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :aggno,
-             tag: 18,
+             tag: 17,
              type: :int32
            }}
         end
@@ -1301,7 +1243,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :aggtransno,
-             tag: 19,
+             tag: 18,
              type: :int32
            }}
         end
@@ -1314,7 +1256,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :aggtransno,
-             tag: 19,
+             tag: 18,
              type: :int32
            }}
         end
@@ -1330,7 +1272,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 20,
+             tag: 19,
              type: :int32
            }}
         end
@@ -1343,7 +1285,7 @@ defmodule PgQuery.Aggref do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 20,
+             tag: 19,
              type: :int32
            }}
         end
@@ -1387,9 +1329,6 @@ defmodule PgQuery.Aggref do
       {:ok, 0}
     end,
     def default(:inputcollid) do
-      {:ok, 0}
-    end,
-    def default(:aggtranstype) do
       {:ok, 0}
     end,
     def default(:aggargtypes) do

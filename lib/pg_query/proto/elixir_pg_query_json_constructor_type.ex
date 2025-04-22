@@ -1,0 +1,174 @@
+# credo:disable-for-this-file
+defmodule PgQuery.JsonConstructorType do
+  @moduledoc false
+  (
+    defstruct []
+
+    (
+      @spec default() :: :JSON_CONSTRUCTOR_TYPE_UNDEFINED
+      def default() do
+        :JSON_CONSTRUCTOR_TYPE_UNDEFINED
+      end
+    )
+
+    @spec encode(atom() | String.t()) :: integer() | atom()
+    [
+      (
+        def encode(:JSON_CONSTRUCTOR_TYPE_UNDEFINED) do
+          0
+        end
+
+        def encode("JSON_CONSTRUCTOR_TYPE_UNDEFINED") do
+          0
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_OBJECT) do
+          1
+        end
+
+        def encode("JSCTOR_JSON_OBJECT") do
+          1
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_ARRAY) do
+          2
+        end
+
+        def encode("JSCTOR_JSON_ARRAY") do
+          2
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_OBJECTAGG) do
+          3
+        end
+
+        def encode("JSCTOR_JSON_OBJECTAGG") do
+          3
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_ARRAYAGG) do
+          4
+        end
+
+        def encode("JSCTOR_JSON_ARRAYAGG") do
+          4
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_PARSE) do
+          5
+        end
+
+        def encode("JSCTOR_JSON_PARSE") do
+          5
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_SCALAR) do
+          6
+        end
+
+        def encode("JSCTOR_JSON_SCALAR") do
+          6
+        end
+      ),
+      (
+        def encode(:JSCTOR_JSON_SERIALIZE) do
+          7
+        end
+
+        def encode("JSCTOR_JSON_SERIALIZE") do
+          7
+        end
+      )
+    ]
+
+    def encode(x) do
+      x
+    end
+
+    @spec decode(integer()) :: atom() | integer()
+    [
+      def decode(0) do
+        :JSON_CONSTRUCTOR_TYPE_UNDEFINED
+      end,
+      def decode(1) do
+        :JSCTOR_JSON_OBJECT
+      end,
+      def decode(2) do
+        :JSCTOR_JSON_ARRAY
+      end,
+      def decode(3) do
+        :JSCTOR_JSON_OBJECTAGG
+      end,
+      def decode(4) do
+        :JSCTOR_JSON_ARRAYAGG
+      end,
+      def decode(5) do
+        :JSCTOR_JSON_PARSE
+      end,
+      def decode(6) do
+        :JSCTOR_JSON_SCALAR
+      end,
+      def decode(7) do
+        :JSCTOR_JSON_SERIALIZE
+      end
+    ]
+
+    def decode(x) do
+      x
+    end
+
+    @spec constants() :: [{integer(), atom()}]
+    def constants() do
+      [
+        {0, :JSON_CONSTRUCTOR_TYPE_UNDEFINED},
+        {1, :JSCTOR_JSON_OBJECT},
+        {2, :JSCTOR_JSON_ARRAY},
+        {3, :JSCTOR_JSON_OBJECTAGG},
+        {4, :JSCTOR_JSON_ARRAYAGG},
+        {5, :JSCTOR_JSON_PARSE},
+        {6, :JSCTOR_JSON_SCALAR},
+        {7, :JSCTOR_JSON_SERIALIZE}
+      ]
+    end
+
+    @spec has_constant?(any()) :: boolean()
+    (
+      [
+        def has_constant?(:JSON_CONSTRUCTOR_TYPE_UNDEFINED) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_OBJECT) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_ARRAY) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_OBJECTAGG) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_ARRAYAGG) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_PARSE) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_SCALAR) do
+          true
+        end,
+        def has_constant?(:JSCTOR_JSON_SERIALIZE) do
+          true
+        end
+      ]
+
+      def has_constant?(_) do
+        false
+      end
+    )
+  )
+end

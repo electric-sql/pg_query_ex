@@ -1,10 +1,14 @@
 # credo:disable-for-this-file
 defmodule PgQuery.RangeTblEntry do
   @moduledoc false
-  defstruct rtekind: :RTEKIND_UNDEFINED,
+  defstruct alias: nil,
+            eref: nil,
+            rtekind: :RTEKIND_UNDEFINED,
             relid: 0,
+            inh: false,
             relkind: "",
             rellockmode: 0,
+            perminfoindex: 0,
             tablesample: nil,
             subquery: nil,
             security_barrier: false,
@@ -26,17 +30,8 @@ defmodule PgQuery.RangeTblEntry do
             colcollations: [],
             enrname: "",
             enrtuples: 0.0,
-            alias: nil,
-            eref: nil,
             lateral: false,
-            inh: false,
             in_from_cl: false,
-            required_perms: 0,
-            check_as_user: 0,
-            selected_cols: [],
-            inserted_cols: [],
-            updated_cols: [],
-            extra_updated_cols: [],
             security_quals: []
 
   (
@@ -53,10 +48,14 @@ defmodule PgQuery.RangeTblEntry do
       @spec encode!(struct) :: iodata | no_return
       def encode!(msg) do
         []
+        |> encode_alias(msg)
+        |> encode_eref(msg)
         |> encode_rtekind(msg)
         |> encode_relid(msg)
+        |> encode_inh(msg)
         |> encode_relkind(msg)
         |> encode_rellockmode(msg)
+        |> encode_perminfoindex(msg)
         |> encode_tablesample(msg)
         |> encode_subquery(msg)
         |> encode_security_barrier(msg)
@@ -78,17 +77,8 @@ defmodule PgQuery.RangeTblEntry do
         |> encode_colcollations(msg)
         |> encode_enrname(msg)
         |> encode_enrtuples(msg)
-        |> encode_alias(msg)
-        |> encode_eref(msg)
         |> encode_lateral(msg)
-        |> encode_inh(msg)
         |> encode_in_from_cl(msg)
-        |> encode_required_perms(msg)
-        |> encode_check_as_user(msg)
-        |> encode_selected_cols(msg)
-        |> encode_inserted_cols(msg)
-        |> encode_updated_cols(msg)
-        |> encode_extra_updated_cols(msg)
         |> encode_security_quals(msg)
       end
     )
@@ -96,12 +86,36 @@ defmodule PgQuery.RangeTblEntry do
     []
 
     [
+      defp encode_alias(acc, msg) do
+        try do
+          if msg.alias == nil do
+            acc
+          else
+            [acc, "\n", Protox.Encode.encode_message(msg.alias)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:alias, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_eref(acc, msg) do
+        try do
+          if msg.eref == nil do
+            acc
+          else
+            [acc, "\x12", Protox.Encode.encode_message(msg.eref)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:eref, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_rtekind(acc, msg) do
         try do
           if msg.rtekind == :RTEKIND_UNDEFINED do
             acc
           else
-            [acc, "\b", msg.rtekind |> PgQuery.RTEKind.encode() |> Protox.Encode.encode_enum()]
+            [acc, "\x18", msg.rtekind |> PgQuery.RTEKind.encode() |> Protox.Encode.encode_enum()]
           end
         rescue
           ArgumentError ->
@@ -113,11 +127,23 @@ defmodule PgQuery.RangeTblEntry do
           if msg.relid == 0 do
             acc
           else
-            [acc, "\x10", Protox.Encode.encode_uint32(msg.relid)]
+            [acc, " ", Protox.Encode.encode_uint32(msg.relid)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:relid, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_inh(acc, msg) do
+        try do
+          if msg.inh == false do
+            acc
+          else
+            [acc, "(", Protox.Encode.encode_bool(msg.inh)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:inh, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_relkind(acc, msg) do
@@ -125,7 +151,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.relkind == "" do
             acc
           else
-            [acc, "\x1A", Protox.Encode.encode_string(msg.relkind)]
+            [acc, "2", Protox.Encode.encode_string(msg.relkind)]
           end
         rescue
           ArgumentError ->
@@ -137,11 +163,24 @@ defmodule PgQuery.RangeTblEntry do
           if msg.rellockmode == 0 do
             acc
           else
-            [acc, " ", Protox.Encode.encode_int32(msg.rellockmode)]
+            [acc, "8", Protox.Encode.encode_int32(msg.rellockmode)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:rellockmode, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_perminfoindex(acc, msg) do
+        try do
+          if msg.perminfoindex == 0 do
+            acc
+          else
+            [acc, "@", Protox.Encode.encode_uint32(msg.perminfoindex)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:perminfoindex, "invalid field value"),
+                    __STACKTRACE__
         end
       end,
       defp encode_tablesample(acc, msg) do
@@ -149,7 +188,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.tablesample == nil do
             acc
           else
-            [acc, "*", Protox.Encode.encode_message(msg.tablesample)]
+            [acc, "J", Protox.Encode.encode_message(msg.tablesample)]
           end
         rescue
           ArgumentError ->
@@ -161,7 +200,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.subquery == nil do
             acc
           else
-            [acc, "2", Protox.Encode.encode_message(msg.subquery)]
+            [acc, "R", Protox.Encode.encode_message(msg.subquery)]
           end
         rescue
           ArgumentError ->
@@ -173,7 +212,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.security_barrier == false do
             acc
           else
-            [acc, "8", Protox.Encode.encode_bool(msg.security_barrier)]
+            [acc, "X", Protox.Encode.encode_bool(msg.security_barrier)]
           end
         rescue
           ArgumentError ->
@@ -186,7 +225,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.jointype == :JOIN_TYPE_UNDEFINED do
             acc
           else
-            [acc, "@", msg.jointype |> PgQuery.JoinType.encode() |> Protox.Encode.encode_enum()]
+            [acc, "`", msg.jointype |> PgQuery.JoinType.encode() |> Protox.Encode.encode_enum()]
           end
         rescue
           ArgumentError ->
@@ -198,7 +237,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.joinmergedcols == 0 do
             acc
           else
-            [acc, "H", Protox.Encode.encode_int32(msg.joinmergedcols)]
+            [acc, "h", Protox.Encode.encode_int32(msg.joinmergedcols)]
           end
         rescue
           ArgumentError ->
@@ -216,7 +255,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "R", Protox.Encode.encode_message(value)]
+                  [acc, "r", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -236,7 +275,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "Z", Protox.Encode.encode_message(value)]
+                  [acc, "z", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -255,7 +294,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "b", Protox.Encode.encode_message(value)]
+                  [acc, "\x82\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -270,7 +309,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.join_using_alias == nil do
             acc
           else
-            [acc, "j", Protox.Encode.encode_message(msg.join_using_alias)]
+            [acc, "\x8A\x01", Protox.Encode.encode_message(msg.join_using_alias)]
           end
         rescue
           ArgumentError ->
@@ -288,7 +327,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "r", Protox.Encode.encode_message(value)]
+                  [acc, "\x92\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -302,7 +341,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.funcordinality == false do
             acc
           else
-            [acc, "x", Protox.Encode.encode_bool(msg.funcordinality)]
+            [acc, "\x98\x01", Protox.Encode.encode_bool(msg.funcordinality)]
           end
         rescue
           ArgumentError ->
@@ -315,7 +354,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.tablefunc == nil do
             acc
           else
-            [acc, "\x82\x01", Protox.Encode.encode_message(msg.tablefunc)]
+            [acc, "\xA2\x01", Protox.Encode.encode_message(msg.tablefunc)]
           end
         rescue
           ArgumentError ->
@@ -332,7 +371,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x8A\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xAA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -346,7 +385,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.ctename == "" do
             acc
           else
-            [acc, "\x92\x01", Protox.Encode.encode_string(msg.ctename)]
+            [acc, "\xB2\x01", Protox.Encode.encode_string(msg.ctename)]
           end
         rescue
           ArgumentError ->
@@ -358,7 +397,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.ctelevelsup == 0 do
             acc
           else
-            [acc, "\x98\x01", Protox.Encode.encode_uint32(msg.ctelevelsup)]
+            [acc, "\xB8\x01", Protox.Encode.encode_uint32(msg.ctelevelsup)]
           end
         rescue
           ArgumentError ->
@@ -370,7 +409,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.self_reference == false do
             acc
           else
-            [acc, "\xA0\x01", Protox.Encode.encode_bool(msg.self_reference)]
+            [acc, "\xC0\x01", Protox.Encode.encode_bool(msg.self_reference)]
           end
         rescue
           ArgumentError ->
@@ -388,7 +427,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xAA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xCA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -407,7 +446,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xB2\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xD2\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -426,7 +465,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xBA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xDA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -441,7 +480,7 @@ defmodule PgQuery.RangeTblEntry do
           if msg.enrname == "" do
             acc
           else
-            [acc, "\xC2\x01", Protox.Encode.encode_string(msg.enrname)]
+            [acc, "\xE2\x01", Protox.Encode.encode_string(msg.enrname)]
           end
         rescue
           ArgumentError ->
@@ -453,35 +492,11 @@ defmodule PgQuery.RangeTblEntry do
           if msg.enrtuples == 0.0 do
             acc
           else
-            [acc, "\xC9\x01", Protox.Encode.encode_double(msg.enrtuples)]
+            [acc, "\xE9\x01", Protox.Encode.encode_double(msg.enrtuples)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:enrtuples, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_alias(acc, msg) do
-        try do
-          if msg.alias == nil do
-            acc
-          else
-            [acc, "\xD2\x01", Protox.Encode.encode_message(msg.alias)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:alias, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_eref(acc, msg) do
-        try do
-          if msg.eref == nil do
-            acc
-          else
-            [acc, "\xDA\x01", Protox.Encode.encode_message(msg.eref)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:eref, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_lateral(acc, msg) do
@@ -489,23 +504,11 @@ defmodule PgQuery.RangeTblEntry do
           if msg.lateral == false do
             acc
           else
-            [acc, "\xE0\x01", Protox.Encode.encode_bool(msg.lateral)]
+            [acc, "\xF0\x01", Protox.Encode.encode_bool(msg.lateral)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:lateral, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_inh(acc, msg) do
-        try do
-          if msg.inh == false do
-            acc
-          else
-            [acc, "\xE8\x01", Protox.Encode.encode_bool(msg.inh)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:inh, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_in_from_cl(acc, msg) do
@@ -513,144 +516,11 @@ defmodule PgQuery.RangeTblEntry do
           if msg.in_from_cl == false do
             acc
           else
-            [acc, "\xF0\x01", Protox.Encode.encode_bool(msg.in_from_cl)]
+            [acc, "\xF8\x01", Protox.Encode.encode_bool(msg.in_from_cl)]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:in_from_cl, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_required_perms(acc, msg) do
-        try do
-          if msg.required_perms == 0 do
-            acc
-          else
-            [acc, "\xF8\x01", Protox.Encode.encode_uint32(msg.required_perms)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:required_perms, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
-      defp encode_check_as_user(acc, msg) do
-        try do
-          if msg.check_as_user == 0 do
-            acc
-          else
-            [acc, "\x80\x02", Protox.Encode.encode_uint32(msg.check_as_user)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:check_as_user, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
-      defp encode_selected_cols(acc, msg) do
-        try do
-          case msg.selected_cols do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                "\x8A\x02",
-                (
-                  {bytes, len} =
-                    Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
-                      value_bytes = :binary.list_to_bin([Protox.Encode.encode_uint64(value)])
-                      {[acc, value_bytes], len + byte_size(value_bytes)}
-                    end)
-
-                  [Protox.Varint.encode(len), bytes]
-                )
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:selected_cols, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
-      defp encode_inserted_cols(acc, msg) do
-        try do
-          case msg.inserted_cols do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                "\x92\x02",
-                (
-                  {bytes, len} =
-                    Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
-                      value_bytes = :binary.list_to_bin([Protox.Encode.encode_uint64(value)])
-                      {[acc, value_bytes], len + byte_size(value_bytes)}
-                    end)
-
-                  [Protox.Varint.encode(len), bytes]
-                )
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:inserted_cols, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
-      defp encode_updated_cols(acc, msg) do
-        try do
-          case msg.updated_cols do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                "\x9A\x02",
-                (
-                  {bytes, len} =
-                    Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
-                      value_bytes = :binary.list_to_bin([Protox.Encode.encode_uint64(value)])
-                      {[acc, value_bytes], len + byte_size(value_bytes)}
-                    end)
-
-                  [Protox.Varint.encode(len), bytes]
-                )
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:updated_cols, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_extra_updated_cols(acc, msg) do
-        try do
-          case msg.extra_updated_cols do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                "\xA2\x02",
-                (
-                  {bytes, len} =
-                    Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
-                      value_bytes = :binary.list_to_bin([Protox.Encode.encode_uint64(value)])
-                      {[acc, value_bytes], len + byte_size(value_bytes)}
-                    end)
-
-                  [Protox.Varint.encode(len), bytes]
-                )
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:extra_updated_cols, "invalid field value"),
-                    __STACKTRACE__
         end
       end,
       defp encode_security_quals(acc, msg) do
@@ -663,7 +533,7 @@ defmodule PgQuery.RangeTblEntry do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xAA\x02", Protox.Encode.encode_message(value)]
+                  [acc, "\x82\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -711,23 +581,45 @@ defmodule PgQuery.RangeTblEntry do
               raise %Protox.IllegalTagError{}
 
             {1, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+
+              {[alias: Protox.MergeMessage.merge(msg.alias, PgQuery.Alias.decode!(delimited))],
+               rest}
+
+            {2, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+
+              {[eref: Protox.MergeMessage.merge(msg.eref, PgQuery.Alias.decode!(delimited))],
+               rest}
+
+            {3, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.RTEKind)
               {[rtekind: value], rest}
 
-            {2, _, bytes} ->
+            {4, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[relid: value], rest}
 
-            {3, _, bytes} ->
+            {5, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[inh: value], rest}
+
+            {6, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[relkind: delimited], rest}
 
-            {4, _, bytes} ->
+            {7, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[rellockmode: value], rest}
 
-            {5, _, bytes} ->
+            {8, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_uint32(bytes)
+              {[perminfoindex: value], rest}
+
+            {9, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -739,7 +631,7 @@ defmodule PgQuery.RangeTblEntry do
                    )
                ], rest}
 
-            {6, _, bytes} ->
+            {10, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -748,34 +640,34 @@ defmodule PgQuery.RangeTblEntry do
                    Protox.MergeMessage.merge(msg.subquery, PgQuery.Query.decode!(delimited))
                ], rest}
 
-            {7, _, bytes} ->
+            {11, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[security_barrier: value], rest}
 
-            {8, _, bytes} ->
+            {12, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.JoinType)
               {[jointype: value], rest}
 
-            {9, _, bytes} ->
+            {13, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[joinmergedcols: value], rest}
 
-            {10, _, bytes} ->
+            {14, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[joinaliasvars: msg.joinaliasvars ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {11, _, bytes} ->
+            {15, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[joinleftcols: msg.joinleftcols ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {12, _, bytes} ->
+            {16, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[joinrightcols: msg.joinrightcols ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {13, _, bytes} ->
+            {17, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -787,16 +679,16 @@ defmodule PgQuery.RangeTblEntry do
                    )
                ], rest}
 
-            {14, _, bytes} ->
+            {18, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[functions: msg.functions ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {15, _, bytes} ->
+            {19, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[funcordinality: value], rest}
 
-            {16, _, bytes} ->
+            {20, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -805,135 +697,57 @@ defmodule PgQuery.RangeTblEntry do
                    Protox.MergeMessage.merge(msg.tablefunc, PgQuery.TableFunc.decode!(delimited))
                ], rest}
 
-            {17, _, bytes} ->
+            {21, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[values_lists: msg.values_lists ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {18, _, bytes} ->
+            {22, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[ctename: delimited], rest}
 
-            {19, _, bytes} ->
+            {23, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[ctelevelsup: value], rest}
 
-            {20, _, bytes} ->
+            {24, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[self_reference: value], rest}
 
-            {21, _, bytes} ->
+            {25, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[coltypes: msg.coltypes ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {22, _, bytes} ->
+            {26, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[coltypmods: msg.coltypmods ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {23, _, bytes} ->
+            {27, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[colcollations: msg.colcollations ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {24, _, bytes} ->
+            {28, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[enrname: delimited], rest}
 
-            {25, _, bytes} ->
+            {29, _, bytes} ->
               {value, rest} = Protox.Decode.parse_double(bytes)
               {[enrtuples: value], rest}
 
-            {26, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[alias: Protox.MergeMessage.merge(msg.alias, PgQuery.Alias.decode!(delimited))],
-               rest}
-
-            {27, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[eref: Protox.MergeMessage.merge(msg.eref, PgQuery.Alias.decode!(delimited))],
-               rest}
-
-            {28, _, bytes} ->
+            {30, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[lateral: value], rest}
 
-            {29, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[inh: value], rest}
-
-            {30, _, bytes} ->
+            {31, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[in_from_cl: value], rest}
 
-            {31, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[required_perms: value], rest}
-
             {32, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[check_as_user: value], rest}
-
-            {33, 2, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[
-                 selected_cols:
-                   msg.selected_cols ++ Protox.Decode.parse_repeated_uint64([], delimited)
-               ], rest}
-
-            {33, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint64(bytes)
-              {[selected_cols: msg.selected_cols ++ [value]], rest}
-
-            {34, 2, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[
-                 inserted_cols:
-                   msg.inserted_cols ++ Protox.Decode.parse_repeated_uint64([], delimited)
-               ], rest}
-
-            {34, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint64(bytes)
-              {[inserted_cols: msg.inserted_cols ++ [value]], rest}
-
-            {35, 2, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[
-                 updated_cols:
-                   msg.updated_cols ++ Protox.Decode.parse_repeated_uint64([], delimited)
-               ], rest}
-
-            {35, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint64(bytes)
-              {[updated_cols: msg.updated_cols ++ [value]], rest}
-
-            {36, 2, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-
-              {[
-                 extra_updated_cols:
-                   msg.extra_updated_cols ++ Protox.Decode.parse_repeated_uint64([], delimited)
-               ], rest}
-
-            {36, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint64(bytes)
-              {[extra_updated_cols: msg.extra_updated_cols ++ [value]], rest}
-
-            {37, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[security_quals: msg.security_quals ++ [PgQuery.Node.decode!(delimited)]], rest}
@@ -995,43 +809,38 @@ defmodule PgQuery.RangeTblEntry do
           }
     def defs() do
       %{
-        1 => {:rtekind, {:scalar, :RTEKIND_UNDEFINED}, {:enum, PgQuery.RTEKind}},
-        2 => {:relid, {:scalar, 0}, :uint32},
-        3 => {:relkind, {:scalar, ""}, :string},
-        4 => {:rellockmode, {:scalar, 0}, :int32},
-        5 => {:tablesample, {:scalar, nil}, {:message, PgQuery.TableSampleClause}},
-        6 => {:subquery, {:scalar, nil}, {:message, PgQuery.Query}},
-        7 => {:security_barrier, {:scalar, false}, :bool},
-        8 => {:jointype, {:scalar, :JOIN_TYPE_UNDEFINED}, {:enum, PgQuery.JoinType}},
-        9 => {:joinmergedcols, {:scalar, 0}, :int32},
-        10 => {:joinaliasvars, :unpacked, {:message, PgQuery.Node}},
-        11 => {:joinleftcols, :unpacked, {:message, PgQuery.Node}},
-        12 => {:joinrightcols, :unpacked, {:message, PgQuery.Node}},
-        13 => {:join_using_alias, {:scalar, nil}, {:message, PgQuery.Alias}},
-        14 => {:functions, :unpacked, {:message, PgQuery.Node}},
-        15 => {:funcordinality, {:scalar, false}, :bool},
-        16 => {:tablefunc, {:scalar, nil}, {:message, PgQuery.TableFunc}},
-        17 => {:values_lists, :unpacked, {:message, PgQuery.Node}},
-        18 => {:ctename, {:scalar, ""}, :string},
-        19 => {:ctelevelsup, {:scalar, 0}, :uint32},
-        20 => {:self_reference, {:scalar, false}, :bool},
-        21 => {:coltypes, :unpacked, {:message, PgQuery.Node}},
-        22 => {:coltypmods, :unpacked, {:message, PgQuery.Node}},
-        23 => {:colcollations, :unpacked, {:message, PgQuery.Node}},
-        24 => {:enrname, {:scalar, ""}, :string},
-        25 => {:enrtuples, {:scalar, 0.0}, :double},
-        26 => {:alias, {:scalar, nil}, {:message, PgQuery.Alias}},
-        27 => {:eref, {:scalar, nil}, {:message, PgQuery.Alias}},
-        28 => {:lateral, {:scalar, false}, :bool},
-        29 => {:inh, {:scalar, false}, :bool},
-        30 => {:in_from_cl, {:scalar, false}, :bool},
-        31 => {:required_perms, {:scalar, 0}, :uint32},
-        32 => {:check_as_user, {:scalar, 0}, :uint32},
-        33 => {:selected_cols, :packed, :uint64},
-        34 => {:inserted_cols, :packed, :uint64},
-        35 => {:updated_cols, :packed, :uint64},
-        36 => {:extra_updated_cols, :packed, :uint64},
-        37 => {:security_quals, :unpacked, {:message, PgQuery.Node}}
+        1 => {:alias, {:scalar, nil}, {:message, PgQuery.Alias}},
+        2 => {:eref, {:scalar, nil}, {:message, PgQuery.Alias}},
+        3 => {:rtekind, {:scalar, :RTEKIND_UNDEFINED}, {:enum, PgQuery.RTEKind}},
+        4 => {:relid, {:scalar, 0}, :uint32},
+        5 => {:inh, {:scalar, false}, :bool},
+        6 => {:relkind, {:scalar, ""}, :string},
+        7 => {:rellockmode, {:scalar, 0}, :int32},
+        8 => {:perminfoindex, {:scalar, 0}, :uint32},
+        9 => {:tablesample, {:scalar, nil}, {:message, PgQuery.TableSampleClause}},
+        10 => {:subquery, {:scalar, nil}, {:message, PgQuery.Query}},
+        11 => {:security_barrier, {:scalar, false}, :bool},
+        12 => {:jointype, {:scalar, :JOIN_TYPE_UNDEFINED}, {:enum, PgQuery.JoinType}},
+        13 => {:joinmergedcols, {:scalar, 0}, :int32},
+        14 => {:joinaliasvars, :unpacked, {:message, PgQuery.Node}},
+        15 => {:joinleftcols, :unpacked, {:message, PgQuery.Node}},
+        16 => {:joinrightcols, :unpacked, {:message, PgQuery.Node}},
+        17 => {:join_using_alias, {:scalar, nil}, {:message, PgQuery.Alias}},
+        18 => {:functions, :unpacked, {:message, PgQuery.Node}},
+        19 => {:funcordinality, {:scalar, false}, :bool},
+        20 => {:tablefunc, {:scalar, nil}, {:message, PgQuery.TableFunc}},
+        21 => {:values_lists, :unpacked, {:message, PgQuery.Node}},
+        22 => {:ctename, {:scalar, ""}, :string},
+        23 => {:ctelevelsup, {:scalar, 0}, :uint32},
+        24 => {:self_reference, {:scalar, false}, :bool},
+        25 => {:coltypes, :unpacked, {:message, PgQuery.Node}},
+        26 => {:coltypmods, :unpacked, {:message, PgQuery.Node}},
+        27 => {:colcollations, :unpacked, {:message, PgQuery.Node}},
+        28 => {:enrname, {:scalar, ""}, :string},
+        29 => {:enrtuples, {:scalar, 0.0}, :double},
+        30 => {:lateral, {:scalar, false}, :bool},
+        31 => {:in_from_cl, {:scalar, false}, :bool},
+        32 => {:security_quals, :unpacked, {:message, PgQuery.Node}}
       }
     end
 
@@ -1041,43 +850,38 @@ defmodule PgQuery.RangeTblEntry do
           }
     def defs_by_name() do
       %{
-        alias: {26, {:scalar, nil}, {:message, PgQuery.Alias}},
-        check_as_user: {32, {:scalar, 0}, :uint32},
-        colcollations: {23, :unpacked, {:message, PgQuery.Node}},
-        coltypes: {21, :unpacked, {:message, PgQuery.Node}},
-        coltypmods: {22, :unpacked, {:message, PgQuery.Node}},
-        ctelevelsup: {19, {:scalar, 0}, :uint32},
-        ctename: {18, {:scalar, ""}, :string},
-        enrname: {24, {:scalar, ""}, :string},
-        enrtuples: {25, {:scalar, 0.0}, :double},
-        eref: {27, {:scalar, nil}, {:message, PgQuery.Alias}},
-        extra_updated_cols: {36, :packed, :uint64},
-        funcordinality: {15, {:scalar, false}, :bool},
-        functions: {14, :unpacked, {:message, PgQuery.Node}},
-        in_from_cl: {30, {:scalar, false}, :bool},
-        inh: {29, {:scalar, false}, :bool},
-        inserted_cols: {34, :packed, :uint64},
-        join_using_alias: {13, {:scalar, nil}, {:message, PgQuery.Alias}},
-        joinaliasvars: {10, :unpacked, {:message, PgQuery.Node}},
-        joinleftcols: {11, :unpacked, {:message, PgQuery.Node}},
-        joinmergedcols: {9, {:scalar, 0}, :int32},
-        joinrightcols: {12, :unpacked, {:message, PgQuery.Node}},
-        jointype: {8, {:scalar, :JOIN_TYPE_UNDEFINED}, {:enum, PgQuery.JoinType}},
-        lateral: {28, {:scalar, false}, :bool},
-        relid: {2, {:scalar, 0}, :uint32},
-        relkind: {3, {:scalar, ""}, :string},
-        rellockmode: {4, {:scalar, 0}, :int32},
-        required_perms: {31, {:scalar, 0}, :uint32},
-        rtekind: {1, {:scalar, :RTEKIND_UNDEFINED}, {:enum, PgQuery.RTEKind}},
-        security_barrier: {7, {:scalar, false}, :bool},
-        security_quals: {37, :unpacked, {:message, PgQuery.Node}},
-        selected_cols: {33, :packed, :uint64},
-        self_reference: {20, {:scalar, false}, :bool},
-        subquery: {6, {:scalar, nil}, {:message, PgQuery.Query}},
-        tablefunc: {16, {:scalar, nil}, {:message, PgQuery.TableFunc}},
-        tablesample: {5, {:scalar, nil}, {:message, PgQuery.TableSampleClause}},
-        updated_cols: {35, :packed, :uint64},
-        values_lists: {17, :unpacked, {:message, PgQuery.Node}}
+        alias: {1, {:scalar, nil}, {:message, PgQuery.Alias}},
+        colcollations: {27, :unpacked, {:message, PgQuery.Node}},
+        coltypes: {25, :unpacked, {:message, PgQuery.Node}},
+        coltypmods: {26, :unpacked, {:message, PgQuery.Node}},
+        ctelevelsup: {23, {:scalar, 0}, :uint32},
+        ctename: {22, {:scalar, ""}, :string},
+        enrname: {28, {:scalar, ""}, :string},
+        enrtuples: {29, {:scalar, 0.0}, :double},
+        eref: {2, {:scalar, nil}, {:message, PgQuery.Alias}},
+        funcordinality: {19, {:scalar, false}, :bool},
+        functions: {18, :unpacked, {:message, PgQuery.Node}},
+        in_from_cl: {31, {:scalar, false}, :bool},
+        inh: {5, {:scalar, false}, :bool},
+        join_using_alias: {17, {:scalar, nil}, {:message, PgQuery.Alias}},
+        joinaliasvars: {14, :unpacked, {:message, PgQuery.Node}},
+        joinleftcols: {15, :unpacked, {:message, PgQuery.Node}},
+        joinmergedcols: {13, {:scalar, 0}, :int32},
+        joinrightcols: {16, :unpacked, {:message, PgQuery.Node}},
+        jointype: {12, {:scalar, :JOIN_TYPE_UNDEFINED}, {:enum, PgQuery.JoinType}},
+        lateral: {30, {:scalar, false}, :bool},
+        perminfoindex: {8, {:scalar, 0}, :uint32},
+        relid: {4, {:scalar, 0}, :uint32},
+        relkind: {6, {:scalar, ""}, :string},
+        rellockmode: {7, {:scalar, 0}, :int32},
+        rtekind: {3, {:scalar, :RTEKIND_UNDEFINED}, {:enum, PgQuery.RTEKind}},
+        security_barrier: {11, {:scalar, false}, :bool},
+        security_quals: {32, :unpacked, {:message, PgQuery.Node}},
+        self_reference: {24, {:scalar, false}, :bool},
+        subquery: {10, {:scalar, nil}, {:message, PgQuery.Query}},
+        tablefunc: {20, {:scalar, nil}, {:message, PgQuery.TableFunc}},
+        tablesample: {9, {:scalar, nil}, {:message, PgQuery.TableSampleClause}},
+        values_lists: {21, :unpacked, {:message, PgQuery.Node}}
       }
     end
   )
@@ -1088,236 +892,11 @@ defmodule PgQuery.RangeTblEntry do
       [
         %{
           __struct__: Protox.Field,
-          json_name: "rtekind",
-          kind: {:scalar, :RTEKIND_UNDEFINED},
-          label: :optional,
-          name: :rtekind,
-          tag: 1,
-          type: {:enum, PgQuery.RTEKind}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "relid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :relid,
-          tag: 2,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "relkind",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :relkind,
-          tag: 3,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "rellockmode",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :rellockmode,
-          tag: 4,
-          type: :int32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "tablesample",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :tablesample,
-          tag: 5,
-          type: {:message, PgQuery.TableSampleClause}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "subquery",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :subquery,
-          tag: 6,
-          type: {:message, PgQuery.Query}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "securityBarrier",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :security_barrier,
-          tag: 7,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "jointype",
-          kind: {:scalar, :JOIN_TYPE_UNDEFINED},
-          label: :optional,
-          name: :jointype,
-          tag: 8,
-          type: {:enum, PgQuery.JoinType}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "joinmergedcols",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :joinmergedcols,
-          tag: 9,
-          type: :int32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "joinaliasvars",
-          kind: :unpacked,
-          label: :repeated,
-          name: :joinaliasvars,
-          tag: 10,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "joinleftcols",
-          kind: :unpacked,
-          label: :repeated,
-          name: :joinleftcols,
-          tag: 11,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "joinrightcols",
-          kind: :unpacked,
-          label: :repeated,
-          name: :joinrightcols,
-          tag: 12,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "joinUsingAlias",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :join_using_alias,
-          tag: 13,
-          type: {:message, PgQuery.Alias}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "functions",
-          kind: :unpacked,
-          label: :repeated,
-          name: :functions,
-          tag: 14,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "funcordinality",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :funcordinality,
-          tag: 15,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "tablefunc",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :tablefunc,
-          tag: 16,
-          type: {:message, PgQuery.TableFunc}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "valuesLists",
-          kind: :unpacked,
-          label: :repeated,
-          name: :values_lists,
-          tag: 17,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "ctename",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :ctename,
-          tag: 18,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "ctelevelsup",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :ctelevelsup,
-          tag: 19,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "selfReference",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :self_reference,
-          tag: 20,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "coltypes",
-          kind: :unpacked,
-          label: :repeated,
-          name: :coltypes,
-          tag: 21,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "coltypmods",
-          kind: :unpacked,
-          label: :repeated,
-          name: :coltypmods,
-          tag: 22,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "colcollations",
-          kind: :unpacked,
-          label: :repeated,
-          name: :colcollations,
-          tag: 23,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "enrname",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :enrname,
-          tag: 24,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "enrtuples",
-          kind: {:scalar, 0.0},
-          label: :optional,
-          name: :enrtuples,
-          tag: 25,
-          type: :double
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "alias",
           kind: {:scalar, nil},
           label: :optional,
           name: :alias,
-          tag: 26,
+          tag: 1,
           type: {:message, PgQuery.Alias}
         },
         %{
@@ -1326,17 +905,26 @@ defmodule PgQuery.RangeTblEntry do
           kind: {:scalar, nil},
           label: :optional,
           name: :eref,
-          tag: 27,
+          tag: 2,
           type: {:message, PgQuery.Alias}
         },
         %{
           __struct__: Protox.Field,
-          json_name: "lateral",
-          kind: {:scalar, false},
+          json_name: "rtekind",
+          kind: {:scalar, :RTEKIND_UNDEFINED},
           label: :optional,
-          name: :lateral,
-          tag: 28,
-          type: :bool
+          name: :rtekind,
+          tag: 3,
+          type: {:enum, PgQuery.RTEKind}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "relid",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :relid,
+          tag: 4,
+          type: :uint32
         },
         %{
           __struct__: Protox.Field,
@@ -1344,7 +932,232 @@ defmodule PgQuery.RangeTblEntry do
           kind: {:scalar, false},
           label: :optional,
           name: :inh,
+          tag: 5,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "relkind",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :relkind,
+          tag: 6,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "rellockmode",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :rellockmode,
+          tag: 7,
+          type: :int32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "perminfoindex",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :perminfoindex,
+          tag: 8,
+          type: :uint32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "tablesample",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :tablesample,
+          tag: 9,
+          type: {:message, PgQuery.TableSampleClause}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "subquery",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :subquery,
+          tag: 10,
+          type: {:message, PgQuery.Query}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "securityBarrier",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :security_barrier,
+          tag: 11,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "jointype",
+          kind: {:scalar, :JOIN_TYPE_UNDEFINED},
+          label: :optional,
+          name: :jointype,
+          tag: 12,
+          type: {:enum, PgQuery.JoinType}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "joinmergedcols",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :joinmergedcols,
+          tag: 13,
+          type: :int32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "joinaliasvars",
+          kind: :unpacked,
+          label: :repeated,
+          name: :joinaliasvars,
+          tag: 14,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "joinleftcols",
+          kind: :unpacked,
+          label: :repeated,
+          name: :joinleftcols,
+          tag: 15,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "joinrightcols",
+          kind: :unpacked,
+          label: :repeated,
+          name: :joinrightcols,
+          tag: 16,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "joinUsingAlias",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :join_using_alias,
+          tag: 17,
+          type: {:message, PgQuery.Alias}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "functions",
+          kind: :unpacked,
+          label: :repeated,
+          name: :functions,
+          tag: 18,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "funcordinality",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :funcordinality,
+          tag: 19,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "tablefunc",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :tablefunc,
+          tag: 20,
+          type: {:message, PgQuery.TableFunc}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "valuesLists",
+          kind: :unpacked,
+          label: :repeated,
+          name: :values_lists,
+          tag: 21,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "ctename",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :ctename,
+          tag: 22,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "ctelevelsup",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :ctelevelsup,
+          tag: 23,
+          type: :uint32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "selfReference",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :self_reference,
+          tag: 24,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "coltypes",
+          kind: :unpacked,
+          label: :repeated,
+          name: :coltypes,
+          tag: 25,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "coltypmods",
+          kind: :unpacked,
+          label: :repeated,
+          name: :coltypmods,
+          tag: 26,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "colcollations",
+          kind: :unpacked,
+          label: :repeated,
+          name: :colcollations,
+          tag: 27,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "enrname",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :enrname,
+          tag: 28,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "enrtuples",
+          kind: {:scalar, 0.0},
+          label: :optional,
+          name: :enrtuples,
           tag: 29,
+          type: :double
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "lateral",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :lateral,
+          tag: 30,
           type: :bool
         },
         %{
@@ -1353,62 +1166,8 @@ defmodule PgQuery.RangeTblEntry do
           kind: {:scalar, false},
           label: :optional,
           name: :in_from_cl,
-          tag: 30,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "requiredPerms",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :required_perms,
           tag: 31,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "checkAsUser",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :check_as_user,
-          tag: 32,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "selectedCols",
-          kind: :packed,
-          label: :repeated,
-          name: :selected_cols,
-          tag: 33,
-          type: :uint64
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "insertedCols",
-          kind: :packed,
-          label: :repeated,
-          name: :inserted_cols,
-          tag: 34,
-          type: :uint64
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "updatedCols",
-          kind: :packed,
-          label: :repeated,
-          name: :updated_cols,
-          tag: 35,
-          type: :uint64
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "extraUpdatedCols",
-          kind: :packed,
-          label: :repeated,
-          name: :extra_updated_cols,
-          tag: 36,
-          type: :uint64
+          type: :bool
         },
         %{
           __struct__: Protox.Field,
@@ -1416,7 +1175,7 @@ defmodule PgQuery.RangeTblEntry do
           kind: :unpacked,
           label: :repeated,
           name: :security_quals,
-          tag: 37,
+          tag: 32,
           type: {:message, PgQuery.Node}
         }
       ]
@@ -1424,775 +1183,6 @@ defmodule PgQuery.RangeTblEntry do
 
     [
       @spec(field_def(atom) :: {:ok, Protox.Field.t()} | {:error, :no_such_field}),
-      (
-        def field_def(:rtekind) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "rtekind",
-             kind: {:scalar, :RTEKIND_UNDEFINED},
-             label: :optional,
-             name: :rtekind,
-             tag: 1,
-             type: {:enum, PgQuery.RTEKind}
-           }}
-        end
-
-        def field_def("rtekind") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "rtekind",
-             kind: {:scalar, :RTEKIND_UNDEFINED},
-             label: :optional,
-             name: :rtekind,
-             tag: 1,
-             type: {:enum, PgQuery.RTEKind}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:relid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "relid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :relid,
-             tag: 2,
-             type: :uint32
-           }}
-        end
-
-        def field_def("relid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "relid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :relid,
-             tag: 2,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:relkind) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "relkind",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :relkind,
-             tag: 3,
-             type: :string
-           }}
-        end
-
-        def field_def("relkind") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "relkind",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :relkind,
-             tag: 3,
-             type: :string
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:rellockmode) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "rellockmode",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :rellockmode,
-             tag: 4,
-             type: :int32
-           }}
-        end
-
-        def field_def("rellockmode") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "rellockmode",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :rellockmode,
-             tag: 4,
-             type: :int32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:tablesample) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "tablesample",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :tablesample,
-             tag: 5,
-             type: {:message, PgQuery.TableSampleClause}
-           }}
-        end
-
-        def field_def("tablesample") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "tablesample",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :tablesample,
-             tag: 5,
-             type: {:message, PgQuery.TableSampleClause}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:subquery) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "subquery",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :subquery,
-             tag: 6,
-             type: {:message, PgQuery.Query}
-           }}
-        end
-
-        def field_def("subquery") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "subquery",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :subquery,
-             tag: 6,
-             type: {:message, PgQuery.Query}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:security_barrier) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "securityBarrier",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :security_barrier,
-             tag: 7,
-             type: :bool
-           }}
-        end
-
-        def field_def("securityBarrier") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "securityBarrier",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :security_barrier,
-             tag: 7,
-             type: :bool
-           }}
-        end
-
-        def field_def("security_barrier") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "securityBarrier",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :security_barrier,
-             tag: 7,
-             type: :bool
-           }}
-        end
-      ),
-      (
-        def field_def(:jointype) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "jointype",
-             kind: {:scalar, :JOIN_TYPE_UNDEFINED},
-             label: :optional,
-             name: :jointype,
-             tag: 8,
-             type: {:enum, PgQuery.JoinType}
-           }}
-        end
-
-        def field_def("jointype") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "jointype",
-             kind: {:scalar, :JOIN_TYPE_UNDEFINED},
-             label: :optional,
-             name: :jointype,
-             tag: 8,
-             type: {:enum, PgQuery.JoinType}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:joinmergedcols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinmergedcols",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :joinmergedcols,
-             tag: 9,
-             type: :int32
-           }}
-        end
-
-        def field_def("joinmergedcols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinmergedcols",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :joinmergedcols,
-             tag: 9,
-             type: :int32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:joinaliasvars) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinaliasvars",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinaliasvars,
-             tag: 10,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("joinaliasvars") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinaliasvars",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinaliasvars,
-             tag: 10,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:joinleftcols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinleftcols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinleftcols,
-             tag: 11,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("joinleftcols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinleftcols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinleftcols,
-             tag: 11,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:joinrightcols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinrightcols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinrightcols,
-             tag: 12,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("joinrightcols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinrightcols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :joinrightcols,
-             tag: 12,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:join_using_alias) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinUsingAlias",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :join_using_alias,
-             tag: 13,
-             type: {:message, PgQuery.Alias}
-           }}
-        end
-
-        def field_def("joinUsingAlias") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinUsingAlias",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :join_using_alias,
-             tag: 13,
-             type: {:message, PgQuery.Alias}
-           }}
-        end
-
-        def field_def("join_using_alias") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "joinUsingAlias",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :join_using_alias,
-             tag: 13,
-             type: {:message, PgQuery.Alias}
-           }}
-        end
-      ),
-      (
-        def field_def(:functions) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "functions",
-             kind: :unpacked,
-             label: :repeated,
-             name: :functions,
-             tag: 14,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("functions") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "functions",
-             kind: :unpacked,
-             label: :repeated,
-             name: :functions,
-             tag: 14,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:funcordinality) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "funcordinality",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :funcordinality,
-             tag: 15,
-             type: :bool
-           }}
-        end
-
-        def field_def("funcordinality") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "funcordinality",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :funcordinality,
-             tag: 15,
-             type: :bool
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:tablefunc) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "tablefunc",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :tablefunc,
-             tag: 16,
-             type: {:message, PgQuery.TableFunc}
-           }}
-        end
-
-        def field_def("tablefunc") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "tablefunc",
-             kind: {:scalar, nil},
-             label: :optional,
-             name: :tablefunc,
-             tag: 16,
-             type: {:message, PgQuery.TableFunc}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:values_lists) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "valuesLists",
-             kind: :unpacked,
-             label: :repeated,
-             name: :values_lists,
-             tag: 17,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("valuesLists") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "valuesLists",
-             kind: :unpacked,
-             label: :repeated,
-             name: :values_lists,
-             tag: 17,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("values_lists") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "valuesLists",
-             kind: :unpacked,
-             label: :repeated,
-             name: :values_lists,
-             tag: 17,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-      ),
-      (
-        def field_def(:ctename) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "ctename",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :ctename,
-             tag: 18,
-             type: :string
-           }}
-        end
-
-        def field_def("ctename") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "ctename",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :ctename,
-             tag: 18,
-             type: :string
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:ctelevelsup) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "ctelevelsup",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :ctelevelsup,
-             tag: 19,
-             type: :uint32
-           }}
-        end
-
-        def field_def("ctelevelsup") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "ctelevelsup",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :ctelevelsup,
-             tag: 19,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:self_reference) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selfReference",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :self_reference,
-             tag: 20,
-             type: :bool
-           }}
-        end
-
-        def field_def("selfReference") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selfReference",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :self_reference,
-             tag: 20,
-             type: :bool
-           }}
-        end
-
-        def field_def("self_reference") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selfReference",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :self_reference,
-             tag: 20,
-             type: :bool
-           }}
-        end
-      ),
-      (
-        def field_def(:coltypes) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "coltypes",
-             kind: :unpacked,
-             label: :repeated,
-             name: :coltypes,
-             tag: 21,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("coltypes") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "coltypes",
-             kind: :unpacked,
-             label: :repeated,
-             name: :coltypes,
-             tag: 21,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:coltypmods) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "coltypmods",
-             kind: :unpacked,
-             label: :repeated,
-             name: :coltypmods,
-             tag: 22,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("coltypmods") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "coltypmods",
-             kind: :unpacked,
-             label: :repeated,
-             name: :coltypmods,
-             tag: 22,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:colcollations) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "colcollations",
-             kind: :unpacked,
-             label: :repeated,
-             name: :colcollations,
-             tag: 23,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("colcollations") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "colcollations",
-             kind: :unpacked,
-             label: :repeated,
-             name: :colcollations,
-             tag: 23,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:enrname) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "enrname",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :enrname,
-             tag: 24,
-             type: :string
-           }}
-        end
-
-        def field_def("enrname") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "enrname",
-             kind: {:scalar, ""},
-             label: :optional,
-             name: :enrname,
-             tag: 24,
-             type: :string
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:enrtuples) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "enrtuples",
-             kind: {:scalar, 0.0},
-             label: :optional,
-             name: :enrtuples,
-             tag: 25,
-             type: :double
-           }}
-        end
-
-        def field_def("enrtuples") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "enrtuples",
-             kind: {:scalar, 0.0},
-             label: :optional,
-             name: :enrtuples,
-             tag: 25,
-             type: :double
-           }}
-        end
-
-        []
-      ),
       (
         def field_def(:alias) do
           {:ok,
@@ -2202,7 +1192,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, nil},
              label: :optional,
              name: :alias,
-             tag: 26,
+             tag: 1,
              type: {:message, PgQuery.Alias}
            }}
         end
@@ -2215,7 +1205,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, nil},
              label: :optional,
              name: :alias,
-             tag: 26,
+             tag: 1,
              type: {:message, PgQuery.Alias}
            }}
         end
@@ -2231,7 +1221,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, nil},
              label: :optional,
              name: :eref,
-             tag: 27,
+             tag: 2,
              type: {:message, PgQuery.Alias}
            }}
         end
@@ -2244,7 +1234,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, nil},
              label: :optional,
              name: :eref,
-             tag: 27,
+             tag: 2,
              type: {:message, PgQuery.Alias}
            }}
         end
@@ -2252,29 +1242,58 @@ defmodule PgQuery.RangeTblEntry do
         []
       ),
       (
-        def field_def(:lateral) do
+        def field_def(:rtekind) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "lateral",
-             kind: {:scalar, false},
+             json_name: "rtekind",
+             kind: {:scalar, :RTEKIND_UNDEFINED},
              label: :optional,
-             name: :lateral,
-             tag: 28,
-             type: :bool
+             name: :rtekind,
+             tag: 3,
+             type: {:enum, PgQuery.RTEKind}
            }}
         end
 
-        def field_def("lateral") do
+        def field_def("rtekind") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "lateral",
-             kind: {:scalar, false},
+             json_name: "rtekind",
+             kind: {:scalar, :RTEKIND_UNDEFINED},
              label: :optional,
-             name: :lateral,
-             tag: 28,
-             type: :bool
+             name: :rtekind,
+             tag: 3,
+             type: {:enum, PgQuery.RTEKind}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:relid) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "relid",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :relid,
+             tag: 4,
+             type: :uint32
+           }}
+        end
+
+        def field_def("relid") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "relid",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :relid,
+             tag: 4,
+             type: :uint32
            }}
         end
 
@@ -2289,7 +1308,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, false},
              label: :optional,
              name: :inh,
-             tag: 29,
+             tag: 5,
              type: :bool
            }}
         end
@@ -2302,7 +1321,776 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, false},
              label: :optional,
              name: :inh,
+             tag: 5,
+             type: :bool
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:relkind) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "relkind",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :relkind,
+             tag: 6,
+             type: :string
+           }}
+        end
+
+        def field_def("relkind") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "relkind",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :relkind,
+             tag: 6,
+             type: :string
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:rellockmode) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "rellockmode",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :rellockmode,
+             tag: 7,
+             type: :int32
+           }}
+        end
+
+        def field_def("rellockmode") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "rellockmode",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :rellockmode,
+             tag: 7,
+             type: :int32
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:perminfoindex) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "perminfoindex",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :perminfoindex,
+             tag: 8,
+             type: :uint32
+           }}
+        end
+
+        def field_def("perminfoindex") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "perminfoindex",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :perminfoindex,
+             tag: 8,
+             type: :uint32
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:tablesample) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "tablesample",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :tablesample,
+             tag: 9,
+             type: {:message, PgQuery.TableSampleClause}
+           }}
+        end
+
+        def field_def("tablesample") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "tablesample",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :tablesample,
+             tag: 9,
+             type: {:message, PgQuery.TableSampleClause}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:subquery) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "subquery",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :subquery,
+             tag: 10,
+             type: {:message, PgQuery.Query}
+           }}
+        end
+
+        def field_def("subquery") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "subquery",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :subquery,
+             tag: 10,
+             type: {:message, PgQuery.Query}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:security_barrier) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "securityBarrier",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :security_barrier,
+             tag: 11,
+             type: :bool
+           }}
+        end
+
+        def field_def("securityBarrier") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "securityBarrier",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :security_barrier,
+             tag: 11,
+             type: :bool
+           }}
+        end
+
+        def field_def("security_barrier") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "securityBarrier",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :security_barrier,
+             tag: 11,
+             type: :bool
+           }}
+        end
+      ),
+      (
+        def field_def(:jointype) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "jointype",
+             kind: {:scalar, :JOIN_TYPE_UNDEFINED},
+             label: :optional,
+             name: :jointype,
+             tag: 12,
+             type: {:enum, PgQuery.JoinType}
+           }}
+        end
+
+        def field_def("jointype") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "jointype",
+             kind: {:scalar, :JOIN_TYPE_UNDEFINED},
+             label: :optional,
+             name: :jointype,
+             tag: 12,
+             type: {:enum, PgQuery.JoinType}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:joinmergedcols) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinmergedcols",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :joinmergedcols,
+             tag: 13,
+             type: :int32
+           }}
+        end
+
+        def field_def("joinmergedcols") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinmergedcols",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :joinmergedcols,
+             tag: 13,
+             type: :int32
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:joinaliasvars) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinaliasvars",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinaliasvars,
+             tag: 14,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("joinaliasvars") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinaliasvars",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinaliasvars,
+             tag: 14,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:joinleftcols) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinleftcols",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinleftcols,
+             tag: 15,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("joinleftcols") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinleftcols",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinleftcols,
+             tag: 15,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:joinrightcols) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinrightcols",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinrightcols,
+             tag: 16,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("joinrightcols") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinrightcols",
+             kind: :unpacked,
+             label: :repeated,
+             name: :joinrightcols,
+             tag: 16,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:join_using_alias) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinUsingAlias",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :join_using_alias,
+             tag: 17,
+             type: {:message, PgQuery.Alias}
+           }}
+        end
+
+        def field_def("joinUsingAlias") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinUsingAlias",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :join_using_alias,
+             tag: 17,
+             type: {:message, PgQuery.Alias}
+           }}
+        end
+
+        def field_def("join_using_alias") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "joinUsingAlias",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :join_using_alias,
+             tag: 17,
+             type: {:message, PgQuery.Alias}
+           }}
+        end
+      ),
+      (
+        def field_def(:functions) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "functions",
+             kind: :unpacked,
+             label: :repeated,
+             name: :functions,
+             tag: 18,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("functions") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "functions",
+             kind: :unpacked,
+             label: :repeated,
+             name: :functions,
+             tag: 18,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:funcordinality) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "funcordinality",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :funcordinality,
+             tag: 19,
+             type: :bool
+           }}
+        end
+
+        def field_def("funcordinality") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "funcordinality",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :funcordinality,
+             tag: 19,
+             type: :bool
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:tablefunc) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "tablefunc",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :tablefunc,
+             tag: 20,
+             type: {:message, PgQuery.TableFunc}
+           }}
+        end
+
+        def field_def("tablefunc") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "tablefunc",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :tablefunc,
+             tag: 20,
+             type: {:message, PgQuery.TableFunc}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:values_lists) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "valuesLists",
+             kind: :unpacked,
+             label: :repeated,
+             name: :values_lists,
+             tag: 21,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("valuesLists") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "valuesLists",
+             kind: :unpacked,
+             label: :repeated,
+             name: :values_lists,
+             tag: 21,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("values_lists") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "valuesLists",
+             kind: :unpacked,
+             label: :repeated,
+             name: :values_lists,
+             tag: 21,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+      ),
+      (
+        def field_def(:ctename) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "ctename",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :ctename,
+             tag: 22,
+             type: :string
+           }}
+        end
+
+        def field_def("ctename") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "ctename",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :ctename,
+             tag: 22,
+             type: :string
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:ctelevelsup) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "ctelevelsup",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :ctelevelsup,
+             tag: 23,
+             type: :uint32
+           }}
+        end
+
+        def field_def("ctelevelsup") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "ctelevelsup",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :ctelevelsup,
+             tag: 23,
+             type: :uint32
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:self_reference) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "selfReference",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :self_reference,
+             tag: 24,
+             type: :bool
+           }}
+        end
+
+        def field_def("selfReference") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "selfReference",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :self_reference,
+             tag: 24,
+             type: :bool
+           }}
+        end
+
+        def field_def("self_reference") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "selfReference",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :self_reference,
+             tag: 24,
+             type: :bool
+           }}
+        end
+      ),
+      (
+        def field_def(:coltypes) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "coltypes",
+             kind: :unpacked,
+             label: :repeated,
+             name: :coltypes,
+             tag: 25,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("coltypes") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "coltypes",
+             kind: :unpacked,
+             label: :repeated,
+             name: :coltypes,
+             tag: 25,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:coltypmods) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "coltypmods",
+             kind: :unpacked,
+             label: :repeated,
+             name: :coltypmods,
+             tag: 26,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("coltypmods") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "coltypmods",
+             kind: :unpacked,
+             label: :repeated,
+             name: :coltypmods,
+             tag: 26,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:colcollations) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "colcollations",
+             kind: :unpacked,
+             label: :repeated,
+             name: :colcollations,
+             tag: 27,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("colcollations") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "colcollations",
+             kind: :unpacked,
+             label: :repeated,
+             name: :colcollations,
+             tag: 27,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:enrname) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "enrname",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :enrname,
+             tag: 28,
+             type: :string
+           }}
+        end
+
+        def field_def("enrname") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "enrname",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :enrname,
+             tag: 28,
+             type: :string
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:enrtuples) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "enrtuples",
+             kind: {:scalar, 0.0},
+             label: :optional,
+             name: :enrtuples,
              tag: 29,
+             type: :double
+           }}
+        end
+
+        def field_def("enrtuples") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "enrtuples",
+             kind: {:scalar, 0.0},
+             label: :optional,
+             name: :enrtuples,
+             tag: 29,
+             type: :double
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:lateral) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "lateral",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :lateral,
+             tag: 30,
+             type: :bool
+           }}
+        end
+
+        def field_def("lateral") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "lateral",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :lateral,
+             tag: 30,
              type: :bool
            }}
         end
@@ -2318,7 +2106,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, false},
              label: :optional,
              name: :in_from_cl,
-             tag: 30,
+             tag: 31,
              type: :bool
            }}
         end
@@ -2331,7 +2119,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, false},
              label: :optional,
              name: :in_from_cl,
-             tag: 30,
+             tag: 31,
              type: :bool
            }}
         end
@@ -2344,248 +2132,8 @@ defmodule PgQuery.RangeTblEntry do
              kind: {:scalar, false},
              label: :optional,
              name: :in_from_cl,
-             tag: 30,
+             tag: 31,
              type: :bool
-           }}
-        end
-      ),
-      (
-        def field_def(:required_perms) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "requiredPerms",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :required_perms,
-             tag: 31,
-             type: :uint32
-           }}
-        end
-
-        def field_def("requiredPerms") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "requiredPerms",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :required_perms,
-             tag: 31,
-             type: :uint32
-           }}
-        end
-
-        def field_def("required_perms") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "requiredPerms",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :required_perms,
-             tag: 31,
-             type: :uint32
-           }}
-        end
-      ),
-      (
-        def field_def(:check_as_user) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "checkAsUser",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :check_as_user,
-             tag: 32,
-             type: :uint32
-           }}
-        end
-
-        def field_def("checkAsUser") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "checkAsUser",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :check_as_user,
-             tag: 32,
-             type: :uint32
-           }}
-        end
-
-        def field_def("check_as_user") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "checkAsUser",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :check_as_user,
-             tag: 32,
-             type: :uint32
-           }}
-        end
-      ),
-      (
-        def field_def(:selected_cols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selectedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :selected_cols,
-             tag: 33,
-             type: :uint64
-           }}
-        end
-
-        def field_def("selectedCols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selectedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :selected_cols,
-             tag: 33,
-             type: :uint64
-           }}
-        end
-
-        def field_def("selected_cols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "selectedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :selected_cols,
-             tag: 33,
-             type: :uint64
-           }}
-        end
-      ),
-      (
-        def field_def(:inserted_cols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "insertedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :inserted_cols,
-             tag: 34,
-             type: :uint64
-           }}
-        end
-
-        def field_def("insertedCols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "insertedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :inserted_cols,
-             tag: 34,
-             type: :uint64
-           }}
-        end
-
-        def field_def("inserted_cols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "insertedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :inserted_cols,
-             tag: 34,
-             type: :uint64
-           }}
-        end
-      ),
-      (
-        def field_def(:updated_cols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "updatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :updated_cols,
-             tag: 35,
-             type: :uint64
-           }}
-        end
-
-        def field_def("updatedCols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "updatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :updated_cols,
-             tag: 35,
-             type: :uint64
-           }}
-        end
-
-        def field_def("updated_cols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "updatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :updated_cols,
-             tag: 35,
-             type: :uint64
-           }}
-        end
-      ),
-      (
-        def field_def(:extra_updated_cols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "extraUpdatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :extra_updated_cols,
-             tag: 36,
-             type: :uint64
-           }}
-        end
-
-        def field_def("extraUpdatedCols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "extraUpdatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :extra_updated_cols,
-             tag: 36,
-             type: :uint64
-           }}
-        end
-
-        def field_def("extra_updated_cols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "extraUpdatedCols",
-             kind: :packed,
-             label: :repeated,
-             name: :extra_updated_cols,
-             tag: 36,
-             type: :uint64
            }}
         end
       ),
@@ -2598,7 +2146,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: :unpacked,
              label: :repeated,
              name: :security_quals,
-             tag: 37,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2611,7 +2159,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: :unpacked,
              label: :repeated,
              name: :security_quals,
-             tag: 37,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2624,7 +2172,7 @@ defmodule PgQuery.RangeTblEntry do
              kind: :unpacked,
              label: :repeated,
              name: :security_quals,
-             tag: 37,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2653,16 +2201,28 @@ defmodule PgQuery.RangeTblEntry do
 
   [
     @spec(default(atom) :: {:ok, boolean | integer | String.t() | float} | {:error, atom}),
+    def default(:alias) do
+      {:ok, nil}
+    end,
+    def default(:eref) do
+      {:ok, nil}
+    end,
     def default(:rtekind) do
       {:ok, :RTEKIND_UNDEFINED}
     end,
     def default(:relid) do
       {:ok, 0}
     end,
+    def default(:inh) do
+      {:ok, false}
+    end,
     def default(:relkind) do
       {:ok, ""}
     end,
     def default(:rellockmode) do
+      {:ok, 0}
+    end,
+    def default(:perminfoindex) do
       {:ok, 0}
     end,
     def default(:tablesample) do
@@ -2728,38 +2288,11 @@ defmodule PgQuery.RangeTblEntry do
     def default(:enrtuples) do
       {:ok, 0.0}
     end,
-    def default(:alias) do
-      {:ok, nil}
-    end,
-    def default(:eref) do
-      {:ok, nil}
-    end,
     def default(:lateral) do
-      {:ok, false}
-    end,
-    def default(:inh) do
       {:ok, false}
     end,
     def default(:in_from_cl) do
       {:ok, false}
-    end,
-    def default(:required_perms) do
-      {:ok, 0}
-    end,
-    def default(:check_as_user) do
-      {:ok, 0}
-    end,
-    def default(:selected_cols) do
-      {:error, :no_default_value}
-    end,
-    def default(:inserted_cols) do
-      {:error, :no_default_value}
-    end,
-    def default(:updated_cols) do
-      {:error, :no_default_value}
-    end,
-    def default(:extra_updated_cols) do
-      {:error, :no_default_value}
     end,
     def default(:security_quals) do
       {:error, :no_default_value}

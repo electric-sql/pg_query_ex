@@ -8,6 +8,7 @@ defmodule PgQuery.WindowFunc do
             inputcollid: 0,
             args: [],
             aggfilter: nil,
+            run_condition: [],
             winref: 0,
             winstar: false,
             winagg: false,
@@ -34,6 +35,7 @@ defmodule PgQuery.WindowFunc do
         |> encode_inputcollid(msg)
         |> encode_args(msg)
         |> encode_aggfilter(msg)
+        |> encode_run_condition(msg)
         |> encode_winref(msg)
         |> encode_winstar(msg)
         |> encode_winagg(msg)
@@ -135,12 +137,32 @@ defmodule PgQuery.WindowFunc do
             reraise Protox.EncodingError.new(:aggfilter, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_run_condition(acc, msg) do
+        try do
+          case msg.run_condition do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "B", Protox.Encode.encode_message(value)]
+                end)
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:run_condition, "invalid field value"),
+                    __STACKTRACE__
+        end
+      end,
       defp encode_winref(acc, msg) do
         try do
           if msg.winref == 0 do
             acc
           else
-            [acc, "@", Protox.Encode.encode_uint32(msg.winref)]
+            [acc, "H", Protox.Encode.encode_uint32(msg.winref)]
           end
         rescue
           ArgumentError ->
@@ -152,7 +174,7 @@ defmodule PgQuery.WindowFunc do
           if msg.winstar == false do
             acc
           else
-            [acc, "H", Protox.Encode.encode_bool(msg.winstar)]
+            [acc, "P", Protox.Encode.encode_bool(msg.winstar)]
           end
         rescue
           ArgumentError ->
@@ -164,7 +186,7 @@ defmodule PgQuery.WindowFunc do
           if msg.winagg == false do
             acc
           else
-            [acc, "P", Protox.Encode.encode_bool(msg.winagg)]
+            [acc, "X", Protox.Encode.encode_bool(msg.winagg)]
           end
         rescue
           ArgumentError ->
@@ -176,7 +198,7 @@ defmodule PgQuery.WindowFunc do
           if msg.location == 0 do
             acc
           else
-            [acc, "X", Protox.Encode.encode_int32(msg.location)]
+            [acc, "`", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -256,18 +278,23 @@ defmodule PgQuery.WindowFunc do
                ], rest}
 
             {8, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[run_condition: msg.run_condition ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {9, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[winref: value], rest}
 
-            {9, _, bytes} ->
+            {10, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[winstar: value], rest}
 
-            {10, _, bytes} ->
+            {11, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[winagg: value], rest}
 
-            {11, _, bytes} ->
+            {12, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -335,10 +362,11 @@ defmodule PgQuery.WindowFunc do
         5 => {:inputcollid, {:scalar, 0}, :uint32},
         6 => {:args, :unpacked, {:message, PgQuery.Node}},
         7 => {:aggfilter, {:scalar, nil}, {:message, PgQuery.Node}},
-        8 => {:winref, {:scalar, 0}, :uint32},
-        9 => {:winstar, {:scalar, false}, :bool},
-        10 => {:winagg, {:scalar, false}, :bool},
-        11 => {:location, {:scalar, 0}, :int32}
+        8 => {:run_condition, :unpacked, {:message, PgQuery.Node}},
+        9 => {:winref, {:scalar, 0}, :uint32},
+        10 => {:winstar, {:scalar, false}, :bool},
+        11 => {:winagg, {:scalar, false}, :bool},
+        12 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -351,12 +379,13 @@ defmodule PgQuery.WindowFunc do
         aggfilter: {7, {:scalar, nil}, {:message, PgQuery.Node}},
         args: {6, :unpacked, {:message, PgQuery.Node}},
         inputcollid: {5, {:scalar, 0}, :uint32},
-        location: {11, {:scalar, 0}, :int32},
-        winagg: {10, {:scalar, false}, :bool},
+        location: {12, {:scalar, 0}, :int32},
+        run_condition: {8, :unpacked, {:message, PgQuery.Node}},
+        winagg: {11, {:scalar, false}, :bool},
         wincollid: {4, {:scalar, 0}, :uint32},
         winfnoid: {2, {:scalar, 0}, :uint32},
-        winref: {8, {:scalar, 0}, :uint32},
-        winstar: {9, {:scalar, false}, :bool},
+        winref: {9, {:scalar, 0}, :uint32},
+        winstar: {10, {:scalar, false}, :bool},
         wintype: {3, {:scalar, 0}, :uint32},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
@@ -432,11 +461,20 @@ defmodule PgQuery.WindowFunc do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "runCondition",
+          kind: :unpacked,
+          label: :repeated,
+          name: :run_condition,
+          tag: 8,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "winref",
           kind: {:scalar, 0},
           label: :optional,
           name: :winref,
-          tag: 8,
+          tag: 9,
           type: :uint32
         },
         %{
@@ -445,7 +483,7 @@ defmodule PgQuery.WindowFunc do
           kind: {:scalar, false},
           label: :optional,
           name: :winstar,
-          tag: 9,
+          tag: 10,
           type: :bool
         },
         %{
@@ -454,7 +492,7 @@ defmodule PgQuery.WindowFunc do
           kind: {:scalar, false},
           label: :optional,
           name: :winagg,
-          tag: 10,
+          tag: 11,
           type: :bool
         },
         %{
@@ -463,7 +501,7 @@ defmodule PgQuery.WindowFunc do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 11,
+          tag: 12,
           type: :int32
         }
       ]
@@ -675,6 +713,46 @@ defmodule PgQuery.WindowFunc do
         []
       ),
       (
+        def field_def(:run_condition) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "runCondition",
+             kind: :unpacked,
+             label: :repeated,
+             name: :run_condition,
+             tag: 8,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("runCondition") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "runCondition",
+             kind: :unpacked,
+             label: :repeated,
+             name: :run_condition,
+             tag: 8,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("run_condition") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "runCondition",
+             kind: :unpacked,
+             label: :repeated,
+             name: :run_condition,
+             tag: 8,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+      ),
+      (
         def field_def(:winref) do
           {:ok,
            %{
@@ -683,7 +761,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :winref,
-             tag: 8,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -696,7 +774,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :winref,
-             tag: 8,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -712,7 +790,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, false},
              label: :optional,
              name: :winstar,
-             tag: 9,
+             tag: 10,
              type: :bool
            }}
         end
@@ -725,7 +803,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, false},
              label: :optional,
              name: :winstar,
-             tag: 9,
+             tag: 10,
              type: :bool
            }}
         end
@@ -741,7 +819,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, false},
              label: :optional,
              name: :winagg,
-             tag: 10,
+             tag: 11,
              type: :bool
            }}
         end
@@ -754,7 +832,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, false},
              label: :optional,
              name: :winagg,
-             tag: 10,
+             tag: 11,
              type: :bool
            }}
         end
@@ -770,7 +848,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 11,
+             tag: 12,
              type: :int32
            }}
         end
@@ -783,7 +861,7 @@ defmodule PgQuery.WindowFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 11,
+             tag: 12,
              type: :int32
            }}
         end
@@ -834,6 +912,9 @@ defmodule PgQuery.WindowFunc do
     end,
     def default(:aggfilter) do
       {:ok, nil}
+    end,
+    def default(:run_condition) do
+      {:error, :no_default_value}
     end,
     def default(:winref) do
       {:ok, 0}

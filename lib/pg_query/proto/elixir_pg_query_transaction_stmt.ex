@@ -5,7 +5,8 @@ defmodule PgQuery.TransactionStmt do
             options: [],
             savepoint_name: "",
             gid: "",
-            chain: false
+            chain: false,
+            location: 0
 
   (
     (
@@ -26,6 +27,7 @@ defmodule PgQuery.TransactionStmt do
         |> encode_savepoint_name(msg)
         |> encode_gid(msg)
         |> encode_chain(msg)
+        |> encode_location(msg)
       end
     )
 
@@ -103,6 +105,18 @@ defmodule PgQuery.TransactionStmt do
           ArgumentError ->
             reraise Protox.EncodingError.new(:chain, "invalid field value"), __STACKTRACE__
         end
+      end,
+      defp encode_location(acc, msg) do
+        try do
+          if msg.location == 0 do
+            acc
+          else
+            [acc, "0", Protox.Encode.encode_int32(msg.location)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:location, "invalid field value"), __STACKTRACE__
+        end
       end
     ]
 
@@ -163,6 +177,10 @@ defmodule PgQuery.TransactionStmt do
             {5, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[chain: value], rest}
+
+            {6, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_int32(bytes)
+              {[location: value], rest}
 
             {tag, wire_type, rest} ->
               {_, rest} = Protox.Decode.parse_unknown(tag, wire_type, rest)
@@ -227,7 +245,8 @@ defmodule PgQuery.TransactionStmt do
         2 => {:options, :unpacked, {:message, PgQuery.Node}},
         3 => {:savepoint_name, {:scalar, ""}, :string},
         4 => {:gid, {:scalar, ""}, :string},
-        5 => {:chain, {:scalar, false}, :bool}
+        5 => {:chain, {:scalar, false}, :bool},
+        6 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -241,6 +260,7 @@ defmodule PgQuery.TransactionStmt do
         gid: {4, {:scalar, ""}, :string},
         kind:
           {1, {:scalar, :TRANSACTION_STMT_KIND_UNDEFINED}, {:enum, PgQuery.TransactionStmtKind}},
+        location: {6, {:scalar, 0}, :int32},
         options: {2, :unpacked, {:message, PgQuery.Node}},
         savepoint_name: {3, {:scalar, ""}, :string}
       }
@@ -295,6 +315,15 @@ defmodule PgQuery.TransactionStmt do
           name: :chain,
           tag: 5,
           type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "location",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :location,
+          tag: 6,
+          type: :int32
         }
       ]
     end
@@ -457,6 +486,35 @@ defmodule PgQuery.TransactionStmt do
 
         []
       ),
+      (
+        def field_def(:location) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "location",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :location,
+             tag: 6,
+             type: :int32
+           }}
+        end
+
+        def field_def("location") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "location",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :location,
+             tag: 6,
+             type: :int32
+           }}
+        end
+
+        []
+      ),
       def field_def(_) do
         {:error, :no_such_field}
       end
@@ -495,6 +553,9 @@ defmodule PgQuery.TransactionStmt do
     end,
     def default(:chain) do
       {:ok, false}
+    end,
+    def default(:location) do
+      {:ok, 0}
     end,
     def default(_) do
       {:error, :no_such_field}

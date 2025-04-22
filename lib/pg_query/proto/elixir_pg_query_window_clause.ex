@@ -8,7 +8,6 @@ defmodule PgQuery.WindowClause do
             frame_options: 0,
             start_offset: nil,
             end_offset: nil,
-            run_condition: [],
             start_in_range_func: 0,
             end_in_range_func: 0,
             in_range_coll: 0,
@@ -38,7 +37,6 @@ defmodule PgQuery.WindowClause do
         |> encode_frame_options(msg)
         |> encode_start_offset(msg)
         |> encode_end_offset(msg)
-        |> encode_run_condition(msg)
         |> encode_start_in_range_func(msg)
         |> encode_end_in_range_func(msg)
         |> encode_in_range_coll(msg)
@@ -152,32 +150,12 @@ defmodule PgQuery.WindowClause do
             reraise Protox.EncodingError.new(:end_offset, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_run_condition(acc, msg) do
-        try do
-          case msg.run_condition do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                Enum.reduce(values, [], fn value, acc ->
-                  [acc, "B", Protox.Encode.encode_message(value)]
-                end)
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:run_condition, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
       defp encode_start_in_range_func(acc, msg) do
         try do
           if msg.start_in_range_func == 0 do
             acc
           else
-            [acc, "H", Protox.Encode.encode_uint32(msg.start_in_range_func)]
+            [acc, "@", Protox.Encode.encode_uint32(msg.start_in_range_func)]
           end
         rescue
           ArgumentError ->
@@ -190,7 +168,7 @@ defmodule PgQuery.WindowClause do
           if msg.end_in_range_func == 0 do
             acc
           else
-            [acc, "P", Protox.Encode.encode_uint32(msg.end_in_range_func)]
+            [acc, "H", Protox.Encode.encode_uint32(msg.end_in_range_func)]
           end
         rescue
           ArgumentError ->
@@ -203,7 +181,7 @@ defmodule PgQuery.WindowClause do
           if msg.in_range_coll == 0 do
             acc
           else
-            [acc, "X", Protox.Encode.encode_uint32(msg.in_range_coll)]
+            [acc, "P", Protox.Encode.encode_uint32(msg.in_range_coll)]
           end
         rescue
           ArgumentError ->
@@ -216,7 +194,7 @@ defmodule PgQuery.WindowClause do
           if msg.in_range_asc == false do
             acc
           else
-            [acc, "`", Protox.Encode.encode_bool(msg.in_range_asc)]
+            [acc, "X", Protox.Encode.encode_bool(msg.in_range_asc)]
           end
         rescue
           ArgumentError ->
@@ -228,7 +206,7 @@ defmodule PgQuery.WindowClause do
           if msg.in_range_nulls_first == false do
             acc
           else
-            [acc, "h", Protox.Encode.encode_bool(msg.in_range_nulls_first)]
+            [acc, "`", Protox.Encode.encode_bool(msg.in_range_nulls_first)]
           end
         rescue
           ArgumentError ->
@@ -241,7 +219,7 @@ defmodule PgQuery.WindowClause do
           if msg.winref == 0 do
             acc
           else
-            [acc, "p", Protox.Encode.encode_uint32(msg.winref)]
+            [acc, "h", Protox.Encode.encode_uint32(msg.winref)]
           end
         rescue
           ArgumentError ->
@@ -253,7 +231,7 @@ defmodule PgQuery.WindowClause do
           if msg.copied_order == false do
             acc
           else
-            [acc, "x", Protox.Encode.encode_bool(msg.copied_order)]
+            [acc, "p", Protox.Encode.encode_bool(msg.copied_order)]
           end
         rescue
           ArgumentError ->
@@ -342,35 +320,30 @@ defmodule PgQuery.WindowClause do
                ], rest}
 
             {8, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[run_condition: msg.run_condition ++ [PgQuery.Node.decode!(delimited)]], rest}
-
-            {9, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[start_in_range_func: value], rest}
 
-            {10, _, bytes} ->
+            {9, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[end_in_range_func: value], rest}
 
-            {11, _, bytes} ->
+            {10, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[in_range_coll: value], rest}
 
-            {12, _, bytes} ->
+            {11, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[in_range_asc: value], rest}
 
-            {13, _, bytes} ->
+            {12, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[in_range_nulls_first: value], rest}
 
-            {14, _, bytes} ->
+            {13, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[winref: value], rest}
 
-            {15, _, bytes} ->
+            {14, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[copied_order: value], rest}
 
@@ -438,14 +411,13 @@ defmodule PgQuery.WindowClause do
         5 => {:frame_options, {:scalar, 0}, :int32},
         6 => {:start_offset, {:scalar, nil}, {:message, PgQuery.Node}},
         7 => {:end_offset, {:scalar, nil}, {:message, PgQuery.Node}},
-        8 => {:run_condition, :unpacked, {:message, PgQuery.Node}},
-        9 => {:start_in_range_func, {:scalar, 0}, :uint32},
-        10 => {:end_in_range_func, {:scalar, 0}, :uint32},
-        11 => {:in_range_coll, {:scalar, 0}, :uint32},
-        12 => {:in_range_asc, {:scalar, false}, :bool},
-        13 => {:in_range_nulls_first, {:scalar, false}, :bool},
-        14 => {:winref, {:scalar, 0}, :uint32},
-        15 => {:copied_order, {:scalar, false}, :bool}
+        8 => {:start_in_range_func, {:scalar, 0}, :uint32},
+        9 => {:end_in_range_func, {:scalar, 0}, :uint32},
+        10 => {:in_range_coll, {:scalar, 0}, :uint32},
+        11 => {:in_range_asc, {:scalar, false}, :bool},
+        12 => {:in_range_nulls_first, {:scalar, false}, :bool},
+        13 => {:winref, {:scalar, 0}, :uint32},
+        14 => {:copied_order, {:scalar, false}, :bool}
       }
     end
 
@@ -455,21 +427,20 @@ defmodule PgQuery.WindowClause do
           }
     def defs_by_name() do
       %{
-        copied_order: {15, {:scalar, false}, :bool},
-        end_in_range_func: {10, {:scalar, 0}, :uint32},
+        copied_order: {14, {:scalar, false}, :bool},
+        end_in_range_func: {9, {:scalar, 0}, :uint32},
         end_offset: {7, {:scalar, nil}, {:message, PgQuery.Node}},
         frame_options: {5, {:scalar, 0}, :int32},
-        in_range_asc: {12, {:scalar, false}, :bool},
-        in_range_coll: {11, {:scalar, 0}, :uint32},
-        in_range_nulls_first: {13, {:scalar, false}, :bool},
+        in_range_asc: {11, {:scalar, false}, :bool},
+        in_range_coll: {10, {:scalar, 0}, :uint32},
+        in_range_nulls_first: {12, {:scalar, false}, :bool},
         name: {1, {:scalar, ""}, :string},
         order_clause: {4, :unpacked, {:message, PgQuery.Node}},
         partition_clause: {3, :unpacked, {:message, PgQuery.Node}},
         refname: {2, {:scalar, ""}, :string},
-        run_condition: {8, :unpacked, {:message, PgQuery.Node}},
-        start_in_range_func: {9, {:scalar, 0}, :uint32},
+        start_in_range_func: {8, {:scalar, 0}, :uint32},
         start_offset: {6, {:scalar, nil}, {:message, PgQuery.Node}},
-        winref: {14, {:scalar, 0}, :uint32}
+        winref: {13, {:scalar, 0}, :uint32}
       }
     end
   )
@@ -543,20 +514,11 @@ defmodule PgQuery.WindowClause do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "runCondition",
-          kind: :unpacked,
-          label: :repeated,
-          name: :run_condition,
-          tag: 8,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "startInRangeFunc",
           kind: {:scalar, 0},
           label: :optional,
           name: :start_in_range_func,
-          tag: 9,
+          tag: 8,
           type: :uint32
         },
         %{
@@ -565,7 +527,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, 0},
           label: :optional,
           name: :end_in_range_func,
-          tag: 10,
+          tag: 9,
           type: :uint32
         },
         %{
@@ -574,7 +536,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, 0},
           label: :optional,
           name: :in_range_coll,
-          tag: 11,
+          tag: 10,
           type: :uint32
         },
         %{
@@ -583,7 +545,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, false},
           label: :optional,
           name: :in_range_asc,
-          tag: 12,
+          tag: 11,
           type: :bool
         },
         %{
@@ -592,7 +554,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, false},
           label: :optional,
           name: :in_range_nulls_first,
-          tag: 13,
+          tag: 12,
           type: :bool
         },
         %{
@@ -601,7 +563,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, 0},
           label: :optional,
           name: :winref,
-          tag: 14,
+          tag: 13,
           type: :uint32
         },
         %{
@@ -610,7 +572,7 @@ defmodule PgQuery.WindowClause do
           kind: {:scalar, false},
           label: :optional,
           name: :copied_order,
-          tag: 15,
+          tag: 14,
           type: :bool
         }
       ]
@@ -877,46 +839,6 @@ defmodule PgQuery.WindowClause do
         end
       ),
       (
-        def field_def(:run_condition) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "runCondition",
-             kind: :unpacked,
-             label: :repeated,
-             name: :run_condition,
-             tag: 8,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("runCondition") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "runCondition",
-             kind: :unpacked,
-             label: :repeated,
-             name: :run_condition,
-             tag: 8,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("run_condition") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "runCondition",
-             kind: :unpacked,
-             label: :repeated,
-             name: :run_condition,
-             tag: 8,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-      ),
-      (
         def field_def(:start_in_range_func) do
           {:ok,
            %{
@@ -925,7 +847,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :start_in_range_func,
-             tag: 9,
+             tag: 8,
              type: :uint32
            }}
         end
@@ -938,7 +860,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :start_in_range_func,
-             tag: 9,
+             tag: 8,
              type: :uint32
            }}
         end
@@ -951,7 +873,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :start_in_range_func,
-             tag: 9,
+             tag: 8,
              type: :uint32
            }}
         end
@@ -965,7 +887,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :end_in_range_func,
-             tag: 10,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -978,7 +900,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :end_in_range_func,
-             tag: 10,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -991,7 +913,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :end_in_range_func,
-             tag: 10,
+             tag: 9,
              type: :uint32
            }}
         end
@@ -1005,7 +927,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :in_range_coll,
-             tag: 11,
+             tag: 10,
              type: :uint32
            }}
         end
@@ -1018,7 +940,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :in_range_coll,
-             tag: 11,
+             tag: 10,
              type: :uint32
            }}
         end
@@ -1031,7 +953,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :in_range_coll,
-             tag: 11,
+             tag: 10,
              type: :uint32
            }}
         end
@@ -1045,7 +967,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_asc,
-             tag: 12,
+             tag: 11,
              type: :bool
            }}
         end
@@ -1058,7 +980,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_asc,
-             tag: 12,
+             tag: 11,
              type: :bool
            }}
         end
@@ -1071,7 +993,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_asc,
-             tag: 12,
+             tag: 11,
              type: :bool
            }}
         end
@@ -1085,7 +1007,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_nulls_first,
-             tag: 13,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1098,7 +1020,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_nulls_first,
-             tag: 13,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1111,7 +1033,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :in_range_nulls_first,
-             tag: 13,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1125,7 +1047,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :winref,
-             tag: 14,
+             tag: 13,
              type: :uint32
            }}
         end
@@ -1138,7 +1060,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, 0},
              label: :optional,
              name: :winref,
-             tag: 14,
+             tag: 13,
              type: :uint32
            }}
         end
@@ -1154,7 +1076,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :copied_order,
-             tag: 15,
+             tag: 14,
              type: :bool
            }}
         end
@@ -1167,7 +1089,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :copied_order,
-             tag: 15,
+             tag: 14,
              type: :bool
            }}
         end
@@ -1180,7 +1102,7 @@ defmodule PgQuery.WindowClause do
              kind: {:scalar, false},
              label: :optional,
              name: :copied_order,
-             tag: 15,
+             tag: 14,
              type: :bool
            }}
         end
@@ -1229,9 +1151,6 @@ defmodule PgQuery.WindowClause do
     end,
     def default(:end_offset) do
       {:ok, nil}
-    end,
-    def default(:run_condition) do
-      {:error, :no_default_value}
     end,
     def default(:start_in_range_func) do
       {:ok, 0}

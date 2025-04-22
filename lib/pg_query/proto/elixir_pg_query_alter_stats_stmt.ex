@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.AlterStatsStmt do
   @moduledoc false
-  defstruct defnames: [], stxstattarget: 0, missing_ok: false
+  defstruct defnames: [], stxstattarget: nil, missing_ok: false
 
   (
     (
@@ -44,10 +44,10 @@ defmodule PgQuery.AlterStatsStmt do
       end,
       defp encode_stxstattarget(acc, msg) do
         try do
-          if msg.stxstattarget == 0 do
+          if msg.stxstattarget == nil do
             acc
           else
-            [acc, "\x10", Protox.Encode.encode_int32(msg.stxstattarget)]
+            [acc, "\x12", Protox.Encode.encode_message(msg.stxstattarget)]
           end
         rescue
           ArgumentError ->
@@ -110,8 +110,13 @@ defmodule PgQuery.AlterStatsStmt do
               {[defnames: msg.defnames ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {2, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_int32(bytes)
-              {[stxstattarget: value], rest}
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+
+              {[
+                 stxstattarget:
+                   Protox.MergeMessage.merge(msg.stxstattarget, PgQuery.Node.decode!(delimited))
+               ], rest}
 
             {3, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
@@ -175,7 +180,7 @@ defmodule PgQuery.AlterStatsStmt do
     def defs() do
       %{
         1 => {:defnames, :unpacked, {:message, PgQuery.Node}},
-        2 => {:stxstattarget, {:scalar, 0}, :int32},
+        2 => {:stxstattarget, {:scalar, nil}, {:message, PgQuery.Node}},
         3 => {:missing_ok, {:scalar, false}, :bool}
       }
     end
@@ -188,7 +193,7 @@ defmodule PgQuery.AlterStatsStmt do
       %{
         defnames: {1, :unpacked, {:message, PgQuery.Node}},
         missing_ok: {3, {:scalar, false}, :bool},
-        stxstattarget: {2, {:scalar, 0}, :int32}
+        stxstattarget: {2, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
   )
@@ -209,11 +214,11 @@ defmodule PgQuery.AlterStatsStmt do
         %{
           __struct__: Protox.Field,
           json_name: "stxstattarget",
-          kind: {:scalar, 0},
+          kind: {:scalar, nil},
           label: :optional,
           name: :stxstattarget,
           tag: 2,
-          type: :int32
+          type: {:message, PgQuery.Node}
         },
         %{
           __struct__: Protox.Field,
@@ -264,11 +269,11 @@ defmodule PgQuery.AlterStatsStmt do
            %{
              __struct__: Protox.Field,
              json_name: "stxstattarget",
-             kind: {:scalar, 0},
+             kind: {:scalar, nil},
              label: :optional,
              name: :stxstattarget,
              tag: 2,
-             type: :int32
+             type: {:message, PgQuery.Node}
            }}
         end
 
@@ -277,11 +282,11 @@ defmodule PgQuery.AlterStatsStmt do
            %{
              __struct__: Protox.Field,
              json_name: "stxstattarget",
-             kind: {:scalar, 0},
+             kind: {:scalar, nil},
              label: :optional,
              name: :stxstattarget,
              tag: 2,
-             type: :int32
+             type: {:message, PgQuery.Node}
            }}
         end
 
@@ -355,7 +360,7 @@ defmodule PgQuery.AlterStatsStmt do
       {:error, :no_default_value}
     end,
     def default(:stxstattarget) do
-      {:ok, 0}
+      {:ok, nil}
     end,
     def default(:missing_ok) do
       {:ok, false}

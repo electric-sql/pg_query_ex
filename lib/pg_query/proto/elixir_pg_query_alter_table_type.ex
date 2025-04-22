@@ -32,56 +32,56 @@ defmodule PgQuery.AlterTableType do
         end
       ),
       (
-        def encode(:AT_AddColumnRecurse) do
-          2
-        end
-
-        def encode("AT_AddColumnRecurse") do
-          2
-        end
-      ),
-      (
         def encode(:AT_AddColumnToView) do
-          3
+          2
         end
 
         def encode("AT_AddColumnToView") do
-          3
+          2
         end
       ),
       (
         def encode(:AT_ColumnDefault) do
-          4
+          3
         end
 
         def encode("AT_ColumnDefault") do
-          4
+          3
         end
       ),
       (
         def encode(:AT_CookedColumnDefault) do
-          5
+          4
         end
 
         def encode("AT_CookedColumnDefault") do
-          5
+          4
         end
       ),
       (
         def encode(:AT_DropNotNull) do
-          6
+          5
         end
 
         def encode("AT_DropNotNull") do
-          6
+          5
         end
       ),
       (
         def encode(:AT_SetNotNull) do
-          7
+          6
         end
 
         def encode("AT_SetNotNull") do
+          6
+        end
+      ),
+      (
+        def encode(:AT_SetExpression) do
+          7
+        end
+
+        def encode("AT_SetExpression") do
           7
         end
       ),
@@ -158,507 +158,471 @@ defmodule PgQuery.AlterTableType do
         end
       ),
       (
-        def encode(:AT_DropColumnRecurse) do
-          16
-        end
-
-        def encode("AT_DropColumnRecurse") do
-          16
-        end
-      ),
-      (
         def encode(:AT_AddIndex) do
-          17
+          16
         end
 
         def encode("AT_AddIndex") do
-          17
+          16
         end
       ),
       (
         def encode(:AT_ReAddIndex) do
-          18
+          17
         end
 
         def encode("AT_ReAddIndex") do
-          18
+          17
         end
       ),
       (
         def encode(:AT_AddConstraint) do
-          19
+          18
         end
 
         def encode("AT_AddConstraint") do
-          19
-        end
-      ),
-      (
-        def encode(:AT_AddConstraintRecurse) do
-          20
-        end
-
-        def encode("AT_AddConstraintRecurse") do
-          20
+          18
         end
       ),
       (
         def encode(:AT_ReAddConstraint) do
-          21
+          19
         end
 
         def encode("AT_ReAddConstraint") do
-          21
+          19
         end
       ),
       (
         def encode(:AT_ReAddDomainConstraint) do
-          22
+          20
         end
 
         def encode("AT_ReAddDomainConstraint") do
-          22
+          20
         end
       ),
       (
         def encode(:AT_AlterConstraint) do
-          23
+          21
         end
 
         def encode("AT_AlterConstraint") do
-          23
+          21
         end
       ),
       (
         def encode(:AT_ValidateConstraint) do
-          24
+          22
         end
 
         def encode("AT_ValidateConstraint") do
-          24
-        end
-      ),
-      (
-        def encode(:AT_ValidateConstraintRecurse) do
-          25
-        end
-
-        def encode("AT_ValidateConstraintRecurse") do
-          25
+          22
         end
       ),
       (
         def encode(:AT_AddIndexConstraint) do
-          26
+          23
         end
 
         def encode("AT_AddIndexConstraint") do
-          26
+          23
         end
       ),
       (
         def encode(:AT_DropConstraint) do
-          27
+          24
         end
 
         def encode("AT_DropConstraint") do
-          27
-        end
-      ),
-      (
-        def encode(:AT_DropConstraintRecurse) do
-          28
-        end
-
-        def encode("AT_DropConstraintRecurse") do
-          28
+          24
         end
       ),
       (
         def encode(:AT_ReAddComment) do
-          29
+          25
         end
 
         def encode("AT_ReAddComment") do
-          29
+          25
         end
       ),
       (
         def encode(:AT_AlterColumnType) do
-          30
+          26
         end
 
         def encode("AT_AlterColumnType") do
-          30
+          26
         end
       ),
       (
         def encode(:AT_AlterColumnGenericOptions) do
-          31
+          27
         end
 
         def encode("AT_AlterColumnGenericOptions") do
-          31
+          27
         end
       ),
       (
         def encode(:AT_ChangeOwner) do
-          32
+          28
         end
 
         def encode("AT_ChangeOwner") do
-          32
+          28
         end
       ),
       (
         def encode(:AT_ClusterOn) do
-          33
+          29
         end
 
         def encode("AT_ClusterOn") do
-          33
+          29
         end
       ),
       (
         def encode(:AT_DropCluster) do
-          34
+          30
         end
 
         def encode("AT_DropCluster") do
-          34
+          30
         end
       ),
       (
         def encode(:AT_SetLogged) do
-          35
+          31
         end
 
         def encode("AT_SetLogged") do
-          35
+          31
         end
       ),
       (
         def encode(:AT_SetUnLogged) do
-          36
+          32
         end
 
         def encode("AT_SetUnLogged") do
-          36
+          32
         end
       ),
       (
         def encode(:AT_DropOids) do
-          37
+          33
         end
 
         def encode("AT_DropOids") do
-          37
+          33
         end
       ),
       (
         def encode(:AT_SetAccessMethod) do
-          38
+          34
         end
 
         def encode("AT_SetAccessMethod") do
-          38
+          34
         end
       ),
       (
         def encode(:AT_SetTableSpace) do
-          39
+          35
         end
 
         def encode("AT_SetTableSpace") do
-          39
+          35
         end
       ),
       (
         def encode(:AT_SetRelOptions) do
-          40
+          36
         end
 
         def encode("AT_SetRelOptions") do
-          40
+          36
         end
       ),
       (
         def encode(:AT_ResetRelOptions) do
-          41
+          37
         end
 
         def encode("AT_ResetRelOptions") do
-          41
+          37
         end
       ),
       (
         def encode(:AT_ReplaceRelOptions) do
-          42
+          38
         end
 
         def encode("AT_ReplaceRelOptions") do
-          42
+          38
         end
       ),
       (
         def encode(:AT_EnableTrig) do
-          43
+          39
         end
 
         def encode("AT_EnableTrig") do
-          43
+          39
         end
       ),
       (
         def encode(:AT_EnableAlwaysTrig) do
-          44
+          40
         end
 
         def encode("AT_EnableAlwaysTrig") do
-          44
+          40
         end
       ),
       (
         def encode(:AT_EnableReplicaTrig) do
-          45
+          41
         end
 
         def encode("AT_EnableReplicaTrig") do
-          45
+          41
         end
       ),
       (
         def encode(:AT_DisableTrig) do
-          46
+          42
         end
 
         def encode("AT_DisableTrig") do
-          46
+          42
         end
       ),
       (
         def encode(:AT_EnableTrigAll) do
-          47
+          43
         end
 
         def encode("AT_EnableTrigAll") do
-          47
+          43
         end
       ),
       (
         def encode(:AT_DisableTrigAll) do
-          48
+          44
         end
 
         def encode("AT_DisableTrigAll") do
-          48
+          44
         end
       ),
       (
         def encode(:AT_EnableTrigUser) do
-          49
+          45
         end
 
         def encode("AT_EnableTrigUser") do
-          49
+          45
         end
       ),
       (
         def encode(:AT_DisableTrigUser) do
-          50
+          46
         end
 
         def encode("AT_DisableTrigUser") do
-          50
+          46
         end
       ),
       (
         def encode(:AT_EnableRule) do
-          51
+          47
         end
 
         def encode("AT_EnableRule") do
-          51
+          47
         end
       ),
       (
         def encode(:AT_EnableAlwaysRule) do
-          52
+          48
         end
 
         def encode("AT_EnableAlwaysRule") do
-          52
+          48
         end
       ),
       (
         def encode(:AT_EnableReplicaRule) do
-          53
+          49
         end
 
         def encode("AT_EnableReplicaRule") do
-          53
+          49
         end
       ),
       (
         def encode(:AT_DisableRule) do
-          54
+          50
         end
 
         def encode("AT_DisableRule") do
-          54
+          50
         end
       ),
       (
         def encode(:AT_AddInherit) do
-          55
+          51
         end
 
         def encode("AT_AddInherit") do
-          55
+          51
         end
       ),
       (
         def encode(:AT_DropInherit) do
-          56
+          52
         end
 
         def encode("AT_DropInherit") do
-          56
+          52
         end
       ),
       (
         def encode(:AT_AddOf) do
-          57
+          53
         end
 
         def encode("AT_AddOf") do
-          57
+          53
         end
       ),
       (
         def encode(:AT_DropOf) do
-          58
+          54
         end
 
         def encode("AT_DropOf") do
-          58
+          54
         end
       ),
       (
         def encode(:AT_ReplicaIdentity) do
-          59
+          55
         end
 
         def encode("AT_ReplicaIdentity") do
-          59
+          55
         end
       ),
       (
         def encode(:AT_EnableRowSecurity) do
-          60
+          56
         end
 
         def encode("AT_EnableRowSecurity") do
-          60
+          56
         end
       ),
       (
         def encode(:AT_DisableRowSecurity) do
-          61
+          57
         end
 
         def encode("AT_DisableRowSecurity") do
-          61
+          57
         end
       ),
       (
         def encode(:AT_ForceRowSecurity) do
-          62
+          58
         end
 
         def encode("AT_ForceRowSecurity") do
-          62
+          58
         end
       ),
       (
         def encode(:AT_NoForceRowSecurity) do
-          63
+          59
         end
 
         def encode("AT_NoForceRowSecurity") do
-          63
+          59
         end
       ),
       (
         def encode(:AT_GenericOptions) do
-          64
+          60
         end
 
         def encode("AT_GenericOptions") do
-          64
+          60
         end
       ),
       (
         def encode(:AT_AttachPartition) do
-          65
+          61
         end
 
         def encode("AT_AttachPartition") do
-          65
+          61
         end
       ),
       (
         def encode(:AT_DetachPartition) do
-          66
+          62
         end
 
         def encode("AT_DetachPartition") do
-          66
+          62
         end
       ),
       (
         def encode(:AT_DetachPartitionFinalize) do
-          67
+          63
         end
 
         def encode("AT_DetachPartitionFinalize") do
-          67
+          63
         end
       ),
       (
         def encode(:AT_AddIdentity) do
-          68
+          64
         end
 
         def encode("AT_AddIdentity") do
-          68
+          64
         end
       ),
       (
         def encode(:AT_SetIdentity) do
-          69
+          65
         end
 
         def encode("AT_SetIdentity") do
-          69
+          65
         end
       ),
       (
         def encode(:AT_DropIdentity) do
-          70
+          66
         end
 
         def encode("AT_DropIdentity") do
-          70
+          66
         end
       ),
       (
         def encode(:AT_ReAddStatistics) do
-          71
+          67
         end
 
         def encode("AT_ReAddStatistics") do
-          71
+          67
         end
       )
     ]
@@ -669,89 +633,47 @@ defmodule PgQuery.AlterTableType do
 
     @spec decode(integer()) :: atom() | integer()
     [
-      def decode(16) do
-        :AT_DropColumnRecurse
-      end,
-      def decode(18) do
-        :AT_ReAddIndex
-      end,
-      def decode(54) do
-        :AT_DisableRule
-      end,
-      def decode(5) do
-        :AT_CookedColumnDefault
-      end,
       def decode(65) do
-        :AT_AttachPartition
-      end,
-      def decode(67) do
-        :AT_DetachPartitionFinalize
-      end,
-      def decode(19) do
-        :AT_AddConstraint
-      end,
-      def decode(42) do
-        :AT_ReplaceRelOptions
-      end,
-      def decode(27) do
-        :AT_DropConstraint
-      end,
-      def decode(49) do
-        :AT_EnableTrigUser
-      end,
-      def decode(62) do
-        :AT_ForceRowSecurity
-      end,
-      def decode(56) do
-        :AT_DropInherit
-      end,
-      def decode(70) do
-        :AT_DropIdentity
-      end,
-      def decode(35) do
-        :AT_SetLogged
-      end,
-      def decode(10) do
-        :AT_SetStatistics
-      end,
-      def decode(24) do
-        :AT_ValidateConstraint
-      end,
-      def decode(66) do
-        :AT_DetachPartition
+        :AT_SetIdentity
       end,
       def decode(50) do
-        :AT_DisableTrigUser
-      end,
-      def decode(53) do
-        :AT_EnableReplicaRule
+        :AT_DisableRule
       end,
       def decode(36) do
-        :AT_SetUnLogged
+        :AT_SetRelOptions
       end,
       def decode(4) do
-        :AT_ColumnDefault
+        :AT_CookedColumnDefault
       end,
-      def decode(21) do
-        :AT_ReAddConstraint
+      def decode(63) do
+        :AT_DetachPartitionFinalize
       end,
-      def decode(52) do
-        :AT_EnableAlwaysRule
+      def decode(25) do
+        :AT_ReAddComment
       end,
-      def decode(22) do
-        :AT_ReAddDomainConstraint
+      def decode(39) do
+        :AT_EnableTrig
       end,
-      def decode(17) do
-        :AT_AddIndex
+      def decode(64) do
+        :AT_AddIdentity
       end,
-      def decode(55) do
-        :AT_AddInherit
+      def decode(62) do
+        :AT_DetachPartition
       end,
-      def decode(58) do
+      def decode(54) do
         :AT_DropOf
       end,
-      def decode(3) do
-        :AT_AddColumnToView
+      def decode(43) do
+        :AT_EnableTrigAll
+      end,
+      def decode(59) do
+        :AT_NoForceRowSecurity
+      end,
+      def decode(40) do
+        :AT_EnableAlwaysTrig
+      end,
+      def decode(51) do
+        :AT_AddInherit
       end,
       def decode(8) do
         :AT_DropExpression
@@ -759,131 +681,161 @@ defmodule PgQuery.AlterTableType do
       def decode(1) do
         :AT_AddColumn
       end,
+      def decode(46) do
+        :AT_DisableTrigUser
+      end,
+      def decode(23) do
+        :AT_AddIndexConstraint
+      end,
+      def decode(10) do
+        :AT_SetStatistics
+      end,
+      def decode(48) do
+        :AT_EnableAlwaysRule
+      end,
       def decode(7) do
-        :AT_SetNotNull
-      end,
-      def decode(2) do
-        :AT_AddColumnRecurse
-      end,
-      def decode(60) do
-        :AT_EnableRowSecurity
-      end,
-      def decode(14) do
-        :AT_SetCompression
-      end,
-      def decode(15) do
-        :AT_DropColumn
-      end,
-      def decode(20) do
-        :AT_AddConstraintRecurse
-      end,
-      def decode(41) do
-        :AT_ResetRelOptions
-      end,
-      def decode(40) do
-        :AT_SetRelOptions
-      end,
-      def decode(59) do
-        :AT_ReplicaIdentity
-      end,
-      def decode(13) do
-        :AT_SetStorage
-      end,
-      def decode(38) do
-        :AT_SetAccessMethod
-      end,
-      def decode(51) do
-        :AT_EnableRule
-      end,
-      def decode(68) do
-        :AT_AddIdentity
-      end,
-      def decode(0) do
-        :ALTER_TABLE_TYPE_UNDEFINED
-      end,
-      def decode(6) do
-        :AT_DropNotNull
-      end,
-      def decode(64) do
-        :AT_GenericOptions
-      end,
-      def decode(28) do
-        :AT_DropConstraintRecurse
-      end,
-      def decode(25) do
-        :AT_ValidateConstraintRecurse
-      end,
-      def decode(34) do
-        :AT_DropCluster
-      end,
-      def decode(32) do
-        :AT_ChangeOwner
+        :AT_SetExpression
       end,
       def decode(9) do
         :AT_CheckNotNull
       end,
-      def decode(37) do
-        :AT_DropOids
-      end,
       def decode(11) do
         :AT_SetOptions
-      end,
-      def decode(31) do
-        :AT_AlterColumnGenericOptions
-      end,
-      def decode(46) do
-        :AT_DisableTrig
-      end,
-      def decode(71) do
-        :AT_ReAddStatistics
-      end,
-      def decode(63) do
-        :AT_NoForceRowSecurity
-      end,
-      def decode(69) do
-        :AT_SetIdentity
-      end,
-      def decode(26) do
-        :AT_AddIndexConstraint
-      end,
-      def decode(57) do
-        :AT_AddOf
-      end,
-      def decode(48) do
-        :AT_DisableTrigAll
-      end,
-      def decode(45) do
-        :AT_EnableReplicaTrig
-      end,
-      def decode(39) do
-        :AT_SetTableSpace
-      end,
-      def decode(43) do
-        :AT_EnableTrig
-      end,
-      def decode(30) do
-        :AT_AlterColumnType
-      end,
-      def decode(61) do
-        :AT_DisableRowSecurity
-      end,
-      def decode(47) do
-        :AT_EnableTrigAll
-      end,
-      def decode(29) do
-        :AT_ReAddComment
-      end,
-      def decode(23) do
-        :AT_AlterConstraint
-      end,
-      def decode(44) do
-        :AT_EnableAlwaysTrig
       end,
       def decode(12) do
         :AT_ResetOptions
       end,
-      def decode(33) do
+      def decode(28) do
+        :AT_ChangeOwner
+      end,
+      def decode(47) do
+        :AT_EnableRule
+      end,
+      def decode(24) do
+        :AT_DropConstraint
+      end,
+      def decode(13) do
+        :AT_SetStorage
+      end,
+      def decode(3) do
+        :AT_ColumnDefault
+      end,
+      def decode(18) do
+        :AT_AddConstraint
+      end,
+      def decode(29) do
         :AT_ClusterOn
+      end,
+      def decode(53) do
+        :AT_AddOf
+      end,
+      def decode(56) do
+        :AT_EnableRowSecurity
+      end,
+      def decode(42) do
+        :AT_DisableTrig
+      end,
+      def decode(45) do
+        :AT_EnableTrigUser
+      end,
+      def decode(26) do
+        :AT_AlterColumnType
+      end,
+      def decode(22) do
+        :AT_ValidateConstraint
+      end,
+      def decode(44) do
+        :AT_DisableTrigAll
+      end,
+      def decode(19) do
+        :AT_ReAddConstraint
+      end,
+      def decode(0) do
+        :ALTER_TABLE_TYPE_UNDEFINED
+      end,
+      def decode(35) do
+        :AT_SetTableSpace
+      end,
+      def decode(2) do
+        :AT_AddColumnToView
+      end,
+      def decode(57) do
+        :AT_DisableRowSecurity
+      end,
+      def decode(60) do
+        :AT_GenericOptions
+      end,
+      def decode(33) do
+        :AT_DropOids
+      end,
+      def decode(21) do
+        :AT_AlterConstraint
+      end,
+      def decode(32) do
+        :AT_SetUnLogged
+      end,
+      def decode(58) do
+        :AT_ForceRowSecurity
+      end,
+      def decode(20) do
+        :AT_ReAddDomainConstraint
+      end,
+      def decode(17) do
+        :AT_ReAddIndex
+      end,
+      def decode(30) do
+        :AT_DropCluster
+      end,
+      def decode(14) do
+        :AT_SetCompression
+      end,
+      def decode(5) do
+        :AT_DropNotNull
+      end,
+      def decode(67) do
+        :AT_ReAddStatistics
+      end,
+      def decode(6) do
+        :AT_SetNotNull
+      end,
+      def decode(55) do
+        :AT_ReplicaIdentity
+      end,
+      def decode(66) do
+        :AT_DropIdentity
+      end,
+      def decode(61) do
+        :AT_AttachPartition
+      end,
+      def decode(41) do
+        :AT_EnableReplicaTrig
+      end,
+      def decode(37) do
+        :AT_ResetRelOptions
+      end,
+      def decode(52) do
+        :AT_DropInherit
+      end,
+      def decode(27) do
+        :AT_AlterColumnGenericOptions
+      end,
+      def decode(49) do
+        :AT_EnableReplicaRule
+      end,
+      def decode(38) do
+        :AT_ReplaceRelOptions
+      end,
+      def decode(34) do
+        :AT_SetAccessMethod
+      end,
+      def decode(16) do
+        :AT_AddIndex
+      end,
+      def decode(31) do
+        :AT_SetLogged
+      end,
+      def decode(15) do
+        :AT_DropColumn
       end
     ]
 
@@ -896,12 +848,12 @@ defmodule PgQuery.AlterTableType do
       [
         {0, :ALTER_TABLE_TYPE_UNDEFINED},
         {1, :AT_AddColumn},
-        {2, :AT_AddColumnRecurse},
-        {3, :AT_AddColumnToView},
-        {4, :AT_ColumnDefault},
-        {5, :AT_CookedColumnDefault},
-        {6, :AT_DropNotNull},
-        {7, :AT_SetNotNull},
+        {2, :AT_AddColumnToView},
+        {3, :AT_ColumnDefault},
+        {4, :AT_CookedColumnDefault},
+        {5, :AT_DropNotNull},
+        {6, :AT_SetNotNull},
+        {7, :AT_SetExpression},
         {8, :AT_DropExpression},
         {9, :AT_CheckNotNull},
         {10, :AT_SetStatistics},
@@ -910,62 +862,58 @@ defmodule PgQuery.AlterTableType do
         {13, :AT_SetStorage},
         {14, :AT_SetCompression},
         {15, :AT_DropColumn},
-        {16, :AT_DropColumnRecurse},
-        {17, :AT_AddIndex},
-        {18, :AT_ReAddIndex},
-        {19, :AT_AddConstraint},
-        {20, :AT_AddConstraintRecurse},
-        {21, :AT_ReAddConstraint},
-        {22, :AT_ReAddDomainConstraint},
-        {23, :AT_AlterConstraint},
-        {24, :AT_ValidateConstraint},
-        {25, :AT_ValidateConstraintRecurse},
-        {26, :AT_AddIndexConstraint},
-        {27, :AT_DropConstraint},
-        {28, :AT_DropConstraintRecurse},
-        {29, :AT_ReAddComment},
-        {30, :AT_AlterColumnType},
-        {31, :AT_AlterColumnGenericOptions},
-        {32, :AT_ChangeOwner},
-        {33, :AT_ClusterOn},
-        {34, :AT_DropCluster},
-        {35, :AT_SetLogged},
-        {36, :AT_SetUnLogged},
-        {37, :AT_DropOids},
-        {38, :AT_SetAccessMethod},
-        {39, :AT_SetTableSpace},
-        {40, :AT_SetRelOptions},
-        {41, :AT_ResetRelOptions},
-        {42, :AT_ReplaceRelOptions},
-        {43, :AT_EnableTrig},
-        {44, :AT_EnableAlwaysTrig},
-        {45, :AT_EnableReplicaTrig},
-        {46, :AT_DisableTrig},
-        {47, :AT_EnableTrigAll},
-        {48, :AT_DisableTrigAll},
-        {49, :AT_EnableTrigUser},
-        {50, :AT_DisableTrigUser},
-        {51, :AT_EnableRule},
-        {52, :AT_EnableAlwaysRule},
-        {53, :AT_EnableReplicaRule},
-        {54, :AT_DisableRule},
-        {55, :AT_AddInherit},
-        {56, :AT_DropInherit},
-        {57, :AT_AddOf},
-        {58, :AT_DropOf},
-        {59, :AT_ReplicaIdentity},
-        {60, :AT_EnableRowSecurity},
-        {61, :AT_DisableRowSecurity},
-        {62, :AT_ForceRowSecurity},
-        {63, :AT_NoForceRowSecurity},
-        {64, :AT_GenericOptions},
-        {65, :AT_AttachPartition},
-        {66, :AT_DetachPartition},
-        {67, :AT_DetachPartitionFinalize},
-        {68, :AT_AddIdentity},
-        {69, :AT_SetIdentity},
-        {70, :AT_DropIdentity},
-        {71, :AT_ReAddStatistics}
+        {16, :AT_AddIndex},
+        {17, :AT_ReAddIndex},
+        {18, :AT_AddConstraint},
+        {19, :AT_ReAddConstraint},
+        {20, :AT_ReAddDomainConstraint},
+        {21, :AT_AlterConstraint},
+        {22, :AT_ValidateConstraint},
+        {23, :AT_AddIndexConstraint},
+        {24, :AT_DropConstraint},
+        {25, :AT_ReAddComment},
+        {26, :AT_AlterColumnType},
+        {27, :AT_AlterColumnGenericOptions},
+        {28, :AT_ChangeOwner},
+        {29, :AT_ClusterOn},
+        {30, :AT_DropCluster},
+        {31, :AT_SetLogged},
+        {32, :AT_SetUnLogged},
+        {33, :AT_DropOids},
+        {34, :AT_SetAccessMethod},
+        {35, :AT_SetTableSpace},
+        {36, :AT_SetRelOptions},
+        {37, :AT_ResetRelOptions},
+        {38, :AT_ReplaceRelOptions},
+        {39, :AT_EnableTrig},
+        {40, :AT_EnableAlwaysTrig},
+        {41, :AT_EnableReplicaTrig},
+        {42, :AT_DisableTrig},
+        {43, :AT_EnableTrigAll},
+        {44, :AT_DisableTrigAll},
+        {45, :AT_EnableTrigUser},
+        {46, :AT_DisableTrigUser},
+        {47, :AT_EnableRule},
+        {48, :AT_EnableAlwaysRule},
+        {49, :AT_EnableReplicaRule},
+        {50, :AT_DisableRule},
+        {51, :AT_AddInherit},
+        {52, :AT_DropInherit},
+        {53, :AT_AddOf},
+        {54, :AT_DropOf},
+        {55, :AT_ReplicaIdentity},
+        {56, :AT_EnableRowSecurity},
+        {57, :AT_DisableRowSecurity},
+        {58, :AT_ForceRowSecurity},
+        {59, :AT_NoForceRowSecurity},
+        {60, :AT_GenericOptions},
+        {61, :AT_AttachPartition},
+        {62, :AT_DetachPartition},
+        {63, :AT_DetachPartitionFinalize},
+        {64, :AT_AddIdentity},
+        {65, :AT_SetIdentity},
+        {66, :AT_DropIdentity},
+        {67, :AT_ReAddStatistics}
       ]
     end
 
@@ -976,9 +924,6 @@ defmodule PgQuery.AlterTableType do
           true
         end,
         def has_constant?(:AT_AddColumn) do
-          true
-        end,
-        def has_constant?(:AT_AddColumnRecurse) do
           true
         end,
         def has_constant?(:AT_AddColumnToView) do
@@ -994,6 +939,9 @@ defmodule PgQuery.AlterTableType do
           true
         end,
         def has_constant?(:AT_SetNotNull) do
+          true
+        end,
+        def has_constant?(:AT_SetExpression) do
           true
         end,
         def has_constant?(:AT_DropExpression) do
@@ -1020,9 +968,6 @@ defmodule PgQuery.AlterTableType do
         def has_constant?(:AT_DropColumn) do
           true
         end,
-        def has_constant?(:AT_DropColumnRecurse) do
-          true
-        end,
         def has_constant?(:AT_AddIndex) do
           true
         end,
@@ -1030,9 +975,6 @@ defmodule PgQuery.AlterTableType do
           true
         end,
         def has_constant?(:AT_AddConstraint) do
-          true
-        end,
-        def has_constant?(:AT_AddConstraintRecurse) do
           true
         end,
         def has_constant?(:AT_ReAddConstraint) do
@@ -1047,16 +989,10 @@ defmodule PgQuery.AlterTableType do
         def has_constant?(:AT_ValidateConstraint) do
           true
         end,
-        def has_constant?(:AT_ValidateConstraintRecurse) do
-          true
-        end,
         def has_constant?(:AT_AddIndexConstraint) do
           true
         end,
         def has_constant?(:AT_DropConstraint) do
-          true
-        end,
-        def has_constant?(:AT_DropConstraintRecurse) do
           true
         end,
         def has_constant?(:AT_ReAddComment) do
