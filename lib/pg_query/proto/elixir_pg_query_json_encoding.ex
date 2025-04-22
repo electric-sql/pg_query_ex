@@ -1,0 +1,126 @@
+# credo:disable-for-this-file
+defmodule PgQuery.JsonEncoding do
+  @moduledoc false
+  (
+    defstruct []
+
+    (
+      @spec default() :: :JSON_ENCODING_UNDEFINED
+      def default() do
+        :JSON_ENCODING_UNDEFINED
+      end
+    )
+
+    @spec encode(atom() | String.t()) :: integer() | atom()
+    [
+      (
+        def encode(:JSON_ENCODING_UNDEFINED) do
+          0
+        end
+
+        def encode("JSON_ENCODING_UNDEFINED") do
+          0
+        end
+      ),
+      (
+        def encode(:JS_ENC_DEFAULT) do
+          1
+        end
+
+        def encode("JS_ENC_DEFAULT") do
+          1
+        end
+      ),
+      (
+        def encode(:JS_ENC_UTF8) do
+          2
+        end
+
+        def encode("JS_ENC_UTF8") do
+          2
+        end
+      ),
+      (
+        def encode(:JS_ENC_UTF16) do
+          3
+        end
+
+        def encode("JS_ENC_UTF16") do
+          3
+        end
+      ),
+      (
+        def encode(:JS_ENC_UTF32) do
+          4
+        end
+
+        def encode("JS_ENC_UTF32") do
+          4
+        end
+      )
+    ]
+
+    def encode(x) do
+      x
+    end
+
+    @spec decode(integer()) :: atom() | integer()
+    [
+      def decode(0) do
+        :JSON_ENCODING_UNDEFINED
+      end,
+      def decode(1) do
+        :JS_ENC_DEFAULT
+      end,
+      def decode(2) do
+        :JS_ENC_UTF8
+      end,
+      def decode(3) do
+        :JS_ENC_UTF16
+      end,
+      def decode(4) do
+        :JS_ENC_UTF32
+      end
+    ]
+
+    def decode(x) do
+      x
+    end
+
+    @spec constants() :: [{integer(), atom()}]
+    def constants() do
+      [
+        {0, :JSON_ENCODING_UNDEFINED},
+        {1, :JS_ENC_DEFAULT},
+        {2, :JS_ENC_UTF8},
+        {3, :JS_ENC_UTF16},
+        {4, :JS_ENC_UTF32}
+      ]
+    end
+
+    @spec has_constant?(any()) :: boolean()
+    (
+      [
+        def has_constant?(:JSON_ENCODING_UNDEFINED) do
+          true
+        end,
+        def has_constant?(:JS_ENC_DEFAULT) do
+          true
+        end,
+        def has_constant?(:JS_ENC_UTF8) do
+          true
+        end,
+        def has_constant?(:JS_ENC_UTF16) do
+          true
+        end,
+        def has_constant?(:JS_ENC_UTF32) do
+          true
+        end
+      ]
+
+      def has_constant?(_) do
+        false
+      end
+    )
+  )
+end

@@ -12,9 +12,9 @@ defmodule PgQuery.IndexStmt do
             exclude_op_names: [],
             idxcomment: "",
             index_oid: 0,
-            old_node: 0,
+            old_number: 0,
             old_create_subid: 0,
-            old_first_relfilenode_subid: 0,
+            old_first_relfilelocator_subid: 0,
             unique: false,
             nulls_not_distinct: false,
             primary: false,
@@ -51,9 +51,9 @@ defmodule PgQuery.IndexStmt do
         |> encode_exclude_op_names(msg)
         |> encode_idxcomment(msg)
         |> encode_index_oid(msg)
-        |> encode_old_node(msg)
+        |> encode_old_number(msg)
         |> encode_old_create_subid(msg)
-        |> encode_old_first_relfilenode_subid(msg)
+        |> encode_old_first_relfilelocator_subid(msg)
         |> encode_unique(msg)
         |> encode_nulls_not_distinct(msg)
         |> encode_primary(msg)
@@ -233,16 +233,16 @@ defmodule PgQuery.IndexStmt do
             reraise Protox.EncodingError.new(:index_oid, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_old_node(acc, msg) do
+      defp encode_old_number(acc, msg) do
         try do
-          if msg.old_node == 0 do
+          if msg.old_number == 0 do
             acc
           else
-            [acc, "`", Protox.Encode.encode_uint32(msg.old_node)]
+            [acc, "`", Protox.Encode.encode_uint32(msg.old_number)]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:old_node, "invalid field value"), __STACKTRACE__
+            reraise Protox.EncodingError.new(:old_number, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_old_create_subid(acc, msg) do
@@ -258,16 +258,19 @@ defmodule PgQuery.IndexStmt do
                     __STACKTRACE__
         end
       end,
-      defp encode_old_first_relfilenode_subid(acc, msg) do
+      defp encode_old_first_relfilelocator_subid(acc, msg) do
         try do
-          if msg.old_first_relfilenode_subid == 0 do
+          if msg.old_first_relfilelocator_subid == 0 do
             acc
           else
-            [acc, "p", Protox.Encode.encode_uint32(msg.old_first_relfilenode_subid)]
+            [acc, "p", Protox.Encode.encode_uint32(msg.old_first_relfilelocator_subid)]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:old_first_relfilenode_subid, "invalid field value"),
+            reraise Protox.EncodingError.new(
+                      :old_first_relfilelocator_subid,
+                      "invalid field value"
+                    ),
                     __STACKTRACE__
         end
       end,
@@ -501,7 +504,7 @@ defmodule PgQuery.IndexStmt do
 
             {12, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[old_node: value], rest}
+              {[old_number: value], rest}
 
             {13, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
@@ -509,7 +512,7 @@ defmodule PgQuery.IndexStmt do
 
             {14, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[old_first_relfilenode_subid: value], rest}
+              {[old_first_relfilelocator_subid: value], rest}
 
             {15, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
@@ -619,9 +622,9 @@ defmodule PgQuery.IndexStmt do
         9 => {:exclude_op_names, :unpacked, {:message, PgQuery.Node}},
         10 => {:idxcomment, {:scalar, ""}, :string},
         11 => {:index_oid, {:scalar, 0}, :uint32},
-        12 => {:old_node, {:scalar, 0}, :uint32},
+        12 => {:old_number, {:scalar, 0}, :uint32},
         13 => {:old_create_subid, {:scalar, 0}, :uint32},
-        14 => {:old_first_relfilenode_subid, {:scalar, 0}, :uint32},
+        14 => {:old_first_relfilelocator_subid, {:scalar, 0}, :uint32},
         15 => {:unique, {:scalar, false}, :bool},
         16 => {:nulls_not_distinct, {:scalar, false}, :bool},
         17 => {:primary, {:scalar, false}, :bool},
@@ -655,8 +658,8 @@ defmodule PgQuery.IndexStmt do
         isconstraint: {18, {:scalar, false}, :bool},
         nulls_not_distinct: {16, {:scalar, false}, :bool},
         old_create_subid: {13, {:scalar, 0}, :uint32},
-        old_first_relfilenode_subid: {14, {:scalar, 0}, :uint32},
-        old_node: {12, {:scalar, 0}, :uint32},
+        old_first_relfilelocator_subid: {14, {:scalar, 0}, :uint32},
+        old_number: {12, {:scalar, 0}, :uint32},
         options: {7, :unpacked, {:message, PgQuery.Node}},
         primary: {17, {:scalar, false}, :bool},
         relation: {2, {:scalar, nil}, {:message, PgQuery.RangeVar}},
@@ -774,10 +777,10 @@ defmodule PgQuery.IndexStmt do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "oldNode",
+          json_name: "oldNumber",
           kind: {:scalar, 0},
           label: :optional,
-          name: :old_node,
+          name: :old_number,
           tag: 12,
           type: :uint32
         },
@@ -792,10 +795,10 @@ defmodule PgQuery.IndexStmt do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "oldFirstRelfilenodeSubid",
+          json_name: "oldFirstRelfilelocatorSubid",
           kind: {:scalar, 0},
           label: :optional,
-          name: :old_first_relfilenode_subid,
+          name: :old_first_relfilelocator_subid,
           tag: 14,
           type: :uint32
         },
@@ -1291,40 +1294,40 @@ defmodule PgQuery.IndexStmt do
         end
       ),
       (
-        def field_def(:old_node) do
+        def field_def(:old_number) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldNode",
+             json_name: "oldNumber",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_node,
+             name: :old_number,
              tag: 12,
              type: :uint32
            }}
         end
 
-        def field_def("oldNode") do
+        def field_def("oldNumber") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldNode",
+             json_name: "oldNumber",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_node,
+             name: :old_number,
              tag: 12,
              type: :uint32
            }}
         end
 
-        def field_def("old_node") do
+        def field_def("old_number") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldNode",
+             json_name: "oldNumber",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_node,
+             name: :old_number,
              tag: 12,
              type: :uint32
            }}
@@ -1371,40 +1374,40 @@ defmodule PgQuery.IndexStmt do
         end
       ),
       (
-        def field_def(:old_first_relfilenode_subid) do
+        def field_def(:old_first_relfilelocator_subid) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldFirstRelfilenodeSubid",
+             json_name: "oldFirstRelfilelocatorSubid",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_first_relfilenode_subid,
+             name: :old_first_relfilelocator_subid,
              tag: 14,
              type: :uint32
            }}
         end
 
-        def field_def("oldFirstRelfilenodeSubid") do
+        def field_def("oldFirstRelfilelocatorSubid") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldFirstRelfilenodeSubid",
+             json_name: "oldFirstRelfilelocatorSubid",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_first_relfilenode_subid,
+             name: :old_first_relfilelocator_subid,
              tag: 14,
              type: :uint32
            }}
         end
 
-        def field_def("old_first_relfilenode_subid") do
+        def field_def("old_first_relfilelocator_subid") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "oldFirstRelfilenodeSubid",
+             json_name: "oldFirstRelfilelocatorSubid",
              kind: {:scalar, 0},
              label: :optional,
-             name: :old_first_relfilenode_subid,
+             name: :old_first_relfilelocator_subid,
              tag: 14,
              type: :uint32
            }}
@@ -1790,13 +1793,13 @@ defmodule PgQuery.IndexStmt do
     def default(:index_oid) do
       {:ok, 0}
     end,
-    def default(:old_node) do
+    def default(:old_number) do
       {:ok, 0}
     end,
     def default(:old_create_subid) do
       {:ok, 0}
     end,
-    def default(:old_first_relfilenode_subid) do
+    def default(:old_first_relfilelocator_subid) do
       {:ok, 0}
     end,
     def default(:unique) do

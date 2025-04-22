@@ -498,164 +498,164 @@ defmodule PgQuery.ObjectType do
 
     @spec decode(integer()) :: atom() | integer()
     [
-      def decode(16) do
-        :OBJECT_EXTENSION
-      end,
       def decode(18) do
         :OBJECT_FOREIGN_SERVER
-      end,
-      def decode(5) do
-        :OBJECT_ATTRIBUTE
-      end,
-      def decode(19) do
-        :OBJECT_FOREIGN_TABLE
-      end,
-      def decode(42) do
-        :OBJECT_TABLE
-      end,
-      def decode(27) do
-        :OBJECT_OPFAMILY
-      end,
-      def decode(49) do
-        :OBJECT_TSTEMPLATE
-      end,
-      def decode(35) do
-        :OBJECT_ROUTINE
-      end,
-      def decode(10) do
-        :OBJECT_DATABASE
-      end,
-      def decode(24) do
-        :OBJECT_MATVIEW
-      end,
-      def decode(50) do
-        :OBJECT_TYPE
-      end,
-      def decode(36) do
-        :OBJECT_RULE
       end,
       def decode(4) do
         :OBJECT_AMPROC
       end,
-      def decode(21) do
-        :OBJECT_INDEX
-      end,
-      def decode(52) do
-        :OBJECT_VIEW
-      end,
-      def decode(22) do
-        :OBJECT_LANGUAGE
-      end,
-      def decode(17) do
-        :OBJECT_FDW
-      end,
-      def decode(3) do
-        :OBJECT_AMOP
-      end,
-      def decode(8) do
-        :OBJECT_COLLATION
-      end,
-      def decode(1) do
-        :OBJECT_ACCESS_METHOD
-      end,
-      def decode(7) do
-        :OBJECT_COLUMN
-      end,
-      def decode(2) do
-        :OBJECT_AGGREGATE
-      end,
-      def decode(14) do
-        :OBJECT_DOMCONSTRAINT
-      end,
-      def decode(15) do
-        :OBJECT_EVENT_TRIGGER
-      end,
-      def decode(20) do
-        :OBJECT_FUNCTION
-      end,
-      def decode(41) do
-        :OBJECT_TABCONSTRAINT
-      end,
-      def decode(40) do
-        :OBJECT_STATISTIC_EXT
-      end,
-      def decode(13) do
-        :OBJECT_DOMAIN
-      end,
-      def decode(38) do
-        :OBJECT_SEQUENCE
-      end,
-      def decode(51) do
-        :OBJECT_USER_MAPPING
-      end,
-      def decode(0) do
-        :OBJECT_TYPE_UNDEFINED
-      end,
-      def decode(6) do
-        :OBJECT_CAST
-      end,
-      def decode(28) do
-        :OBJECT_PARAMETER_ACL
-      end,
-      def decode(25) do
-        :OBJECT_OPCLASS
-      end,
       def decode(34) do
         :OBJECT_ROLE
-      end,
-      def decode(32) do
-        :OBJECT_PUBLICATION_NAMESPACE
-      end,
-      def decode(9) do
-        :OBJECT_CONVERSION
-      end,
-      def decode(37) do
-        :OBJECT_SCHEMA
-      end,
-      def decode(11) do
-        :OBJECT_DEFAULT
-      end,
-      def decode(31) do
-        :OBJECT_PUBLICATION
       end,
       def decode(46) do
         :OBJECT_TSCONFIGURATION
       end,
-      def decode(26) do
-        :OBJECT_OPERATOR
+      def decode(52) do
+        :OBJECT_VIEW
+      end,
+      def decode(12) do
+        :OBJECT_DEFACL
+      end,
+      def decode(19) do
+        :OBJECT_FOREIGN_TABLE
+      end,
+      def decode(41) do
+        :OBJECT_TABCONSTRAINT
+      end,
+      def decode(29) do
+        :OBJECT_POLICY
+      end,
+      def decode(13) do
+        :OBJECT_DOMAIN
+      end,
+      def decode(42) do
+        :OBJECT_TABLE
+      end,
+      def decode(2) do
+        :OBJECT_AGGREGATE
+      end,
+      def decode(7) do
+        :OBJECT_COLUMN
+      end,
+      def decode(38) do
+        :OBJECT_SEQUENCE
+      end,
+      def decode(31) do
+        :OBJECT_PUBLICATION
+      end,
+      def decode(8) do
+        :OBJECT_COLLATION
+      end,
+      def decode(44) do
+        :OBJECT_TRANSFORM
+      end,
+      def decode(10) do
+        :OBJECT_DATABASE
+      end,
+      def decode(23) do
+        :OBJECT_LARGEOBJECT
+      end,
+      def decode(9) do
+        :OBJECT_CONVERSION
+      end,
+      def decode(49) do
+        :OBJECT_TSTEMPLATE
+      end,
+      def decode(15) do
+        :OBJECT_EVENT_TRIGGER
+      end,
+      def decode(35) do
+        :OBJECT_ROUTINE
+      end,
+      def decode(36) do
+        :OBJECT_RULE
+      end,
+      def decode(32) do
+        :OBJECT_PUBLICATION_NAMESPACE
+      end,
+      def decode(1) do
+        :OBJECT_ACCESS_METHOD
+      end,
+      def decode(25) do
+        :OBJECT_OPCLASS
+      end,
+      def decode(28) do
+        :OBJECT_PARAMETER_ACL
+      end,
+      def decode(20) do
+        :OBJECT_FUNCTION
+      end,
+      def decode(6) do
+        :OBJECT_CAST
+      end,
+      def decode(43) do
+        :OBJECT_TABLESPACE
+      end,
+      def decode(11) do
+        :OBJECT_DEFAULT
       end,
       def decode(48) do
         :OBJECT_TSPARSER
+      end,
+      def decode(17) do
+        :OBJECT_FDW
+      end,
+      def decode(24) do
+        :OBJECT_MATVIEW
+      end,
+      def decode(37) do
+        :OBJECT_SCHEMA
+      end,
+      def decode(40) do
+        :OBJECT_STATISTIC_EXT
+      end,
+      def decode(14) do
+        :OBJECT_DOMCONSTRAINT
+      end,
+      def decode(33) do
+        :OBJECT_PUBLICATION_REL
+      end,
+      def decode(3) do
+        :OBJECT_AMOP
+      end,
+      def decode(16) do
+        :OBJECT_EXTENSION
+      end,
+      def decode(30) do
+        :OBJECT_PROCEDURE
+      end,
+      def decode(21) do
+        :OBJECT_INDEX
+      end,
+      def decode(5) do
+        :OBJECT_ATTRIBUTE
+      end,
+      def decode(0) do
+        :OBJECT_TYPE_UNDEFINED
+      end,
+      def decode(27) do
+        :OBJECT_OPFAMILY
+      end,
+      def decode(47) do
+        :OBJECT_TSDICTIONARY
+      end,
+      def decode(26) do
+        :OBJECT_OPERATOR
+      end,
+      def decode(51) do
+        :OBJECT_USER_MAPPING
+      end,
+      def decode(22) do
+        :OBJECT_LANGUAGE
+      end,
+      def decode(50) do
+        :OBJECT_TYPE
       end,
       def decode(45) do
         :OBJECT_TRIGGER
       end,
       def decode(39) do
         :OBJECT_SUBSCRIPTION
-      end,
-      def decode(43) do
-        :OBJECT_TABLESPACE
-      end,
-      def decode(30) do
-        :OBJECT_PROCEDURE
-      end,
-      def decode(47) do
-        :OBJECT_TSDICTIONARY
-      end,
-      def decode(29) do
-        :OBJECT_POLICY
-      end,
-      def decode(23) do
-        :OBJECT_LARGEOBJECT
-      end,
-      def decode(44) do
-        :OBJECT_TRANSFORM
-      end,
-      def decode(12) do
-        :OBJECT_DEFACL
-      end,
-      def decode(33) do
-        :OBJECT_PUBLICATION_REL
       end
     ]
 

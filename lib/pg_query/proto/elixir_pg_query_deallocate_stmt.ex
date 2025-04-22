@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.DeallocateStmt do
   @moduledoc false
-  defstruct name: ""
+  defstruct name: "", isall: false, location: 0
 
   (
     (
@@ -16,7 +16,7 @@ defmodule PgQuery.DeallocateStmt do
 
       @spec encode!(struct) :: iodata | no_return
       def encode!(msg) do
-        [] |> encode_name(msg)
+        [] |> encode_name(msg) |> encode_isall(msg) |> encode_location(msg)
       end
     )
 
@@ -33,6 +33,30 @@ defmodule PgQuery.DeallocateStmt do
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:name, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_isall(acc, msg) do
+        try do
+          if msg.isall == false do
+            acc
+          else
+            [acc, "\x10", Protox.Encode.encode_bool(msg.isall)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:isall, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_location(acc, msg) do
+        try do
+          if msg.location == 0 do
+            acc
+          else
+            [acc, "\x18", Protox.Encode.encode_int32(msg.location)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:location, "invalid field value"), __STACKTRACE__
         end
       end
     ]
@@ -76,6 +100,14 @@ defmodule PgQuery.DeallocateStmt do
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[name: delimited], rest}
+
+            {2, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[isall: value], rest}
+
+            {3, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_int32(bytes)
+              {[location: value], rest}
 
             {tag, wire_type, rest} ->
               {_, rest} = Protox.Decode.parse_unknown(tag, wire_type, rest)
@@ -133,7 +165,11 @@ defmodule PgQuery.DeallocateStmt do
             required(non_neg_integer) => {atom, Protox.Types.kind(), Protox.Types.type()}
           }
     def defs() do
-      %{1 => {:name, {:scalar, ""}, :string}}
+      %{
+        1 => {:name, {:scalar, ""}, :string},
+        2 => {:isall, {:scalar, false}, :bool},
+        3 => {:location, {:scalar, 0}, :int32}
+      }
     end
 
     @deprecated "Use fields_defs()/0 instead"
@@ -141,7 +177,11 @@ defmodule PgQuery.DeallocateStmt do
             required(atom) => {non_neg_integer, Protox.Types.kind(), Protox.Types.type()}
           }
     def defs_by_name() do
-      %{name: {1, {:scalar, ""}, :string}}
+      %{
+        isall: {2, {:scalar, false}, :bool},
+        location: {3, {:scalar, 0}, :int32},
+        name: {1, {:scalar, ""}, :string}
+      }
     end
   )
 
@@ -157,6 +197,24 @@ defmodule PgQuery.DeallocateStmt do
           name: :name,
           tag: 1,
           type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "isall",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :isall,
+          tag: 2,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "location",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :location,
+          tag: 3,
+          type: :int32
         }
       ]
     end
@@ -192,6 +250,64 @@ defmodule PgQuery.DeallocateStmt do
 
         []
       ),
+      (
+        def field_def(:isall) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "isall",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :isall,
+             tag: 2,
+             type: :bool
+           }}
+        end
+
+        def field_def("isall") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "isall",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :isall,
+             tag: 2,
+             type: :bool
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:location) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "location",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :location,
+             tag: 3,
+             type: :int32
+           }}
+        end
+
+        def field_def("location") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "location",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :location,
+             tag: 3,
+             type: :int32
+           }}
+        end
+
+        []
+      ),
       def field_def(_) do
         {:error, :no_such_field}
       end
@@ -218,6 +334,12 @@ defmodule PgQuery.DeallocateStmt do
     @spec(default(atom) :: {:ok, boolean | integer | String.t() | float} | {:error, atom}),
     def default(:name) do
       {:ok, ""}
+    end,
+    def default(:isall) do
+      {:ok, false}
+    end,
+    def default(:location) do
+      {:ok, 0}
     end,
     def default(_) do
       {:error, :no_such_field}

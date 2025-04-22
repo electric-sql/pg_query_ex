@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.GroupingFunc do
   @moduledoc false
-  defstruct xpr: nil, args: [], refs: [], cols: [], agglevelsup: 0, location: 0
+  defstruct xpr: nil, args: [], refs: [], agglevelsup: 0, location: 0
 
   (
     (
@@ -20,7 +20,6 @@ defmodule PgQuery.GroupingFunc do
         |> encode_xpr(msg)
         |> encode_args(msg)
         |> encode_refs(msg)
-        |> encode_cols(msg)
         |> encode_agglevelsup(msg)
         |> encode_location(msg)
       end
@@ -79,31 +78,12 @@ defmodule PgQuery.GroupingFunc do
             reraise Protox.EncodingError.new(:refs, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_cols(acc, msg) do
-        try do
-          case msg.cols do
-            [] ->
-              acc
-
-            values ->
-              [
-                acc,
-                Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\"", Protox.Encode.encode_message(value)]
-                end)
-              ]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:cols, "invalid field value"), __STACKTRACE__
-        end
-      end,
       defp encode_agglevelsup(acc, msg) do
         try do
           if msg.agglevelsup == 0 do
             acc
           else
-            [acc, "(", Protox.Encode.encode_uint32(msg.agglevelsup)]
+            [acc, " ", Protox.Encode.encode_uint32(msg.agglevelsup)]
           end
         rescue
           ArgumentError ->
@@ -115,7 +95,7 @@ defmodule PgQuery.GroupingFunc do
           if msg.location == 0 do
             acc
           else
-            [acc, "0", Protox.Encode.encode_int32(msg.location)]
+            [acc, "(", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -175,15 +155,10 @@ defmodule PgQuery.GroupingFunc do
               {[refs: msg.refs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {4, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[cols: msg.cols ++ [PgQuery.Node.decode!(delimited)]], rest}
-
-            {5, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[agglevelsup: value], rest}
 
-            {6, _, bytes} ->
+            {5, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -247,9 +222,8 @@ defmodule PgQuery.GroupingFunc do
         1 => {:xpr, {:scalar, nil}, {:message, PgQuery.Node}},
         2 => {:args, :unpacked, {:message, PgQuery.Node}},
         3 => {:refs, :unpacked, {:message, PgQuery.Node}},
-        4 => {:cols, :unpacked, {:message, PgQuery.Node}},
-        5 => {:agglevelsup, {:scalar, 0}, :uint32},
-        6 => {:location, {:scalar, 0}, :int32}
+        4 => {:agglevelsup, {:scalar, 0}, :uint32},
+        5 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -259,10 +233,9 @@ defmodule PgQuery.GroupingFunc do
           }
     def defs_by_name() do
       %{
-        agglevelsup: {5, {:scalar, 0}, :uint32},
+        agglevelsup: {4, {:scalar, 0}, :uint32},
         args: {2, :unpacked, {:message, PgQuery.Node}},
-        cols: {4, :unpacked, {:message, PgQuery.Node}},
-        location: {6, {:scalar, 0}, :int32},
+        location: {5, {:scalar, 0}, :int32},
         refs: {3, :unpacked, {:message, PgQuery.Node}},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
@@ -302,20 +275,11 @@ defmodule PgQuery.GroupingFunc do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "cols",
-          kind: :unpacked,
-          label: :repeated,
-          name: :cols,
-          tag: 4,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "agglevelsup",
           kind: {:scalar, 0},
           label: :optional,
           name: :agglevelsup,
-          tag: 5,
+          tag: 4,
           type: :uint32
         },
         %{
@@ -324,7 +288,7 @@ defmodule PgQuery.GroupingFunc do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 6,
+          tag: 5,
           type: :int32
         }
       ]
@@ -420,35 +384,6 @@ defmodule PgQuery.GroupingFunc do
         []
       ),
       (
-        def field_def(:cols) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "cols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :cols,
-             tag: 4,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        def field_def("cols") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "cols",
-             kind: :unpacked,
-             label: :repeated,
-             name: :cols,
-             tag: 4,
-             type: {:message, PgQuery.Node}
-           }}
-        end
-
-        []
-      ),
-      (
         def field_def(:agglevelsup) do
           {:ok,
            %{
@@ -457,7 +392,7 @@ defmodule PgQuery.GroupingFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :agglevelsup,
-             tag: 5,
+             tag: 4,
              type: :uint32
            }}
         end
@@ -470,7 +405,7 @@ defmodule PgQuery.GroupingFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :agglevelsup,
-             tag: 5,
+             tag: 4,
              type: :uint32
            }}
         end
@@ -486,7 +421,7 @@ defmodule PgQuery.GroupingFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 6,
+             tag: 5,
              type: :int32
            }}
         end
@@ -499,7 +434,7 @@ defmodule PgQuery.GroupingFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 6,
+             tag: 5,
              type: :int32
            }}
         end
@@ -537,9 +472,6 @@ defmodule PgQuery.GroupingFunc do
       {:error, :no_default_value}
     end,
     def default(:refs) do
-      {:error, :no_default_value}
-    end,
-    def default(:cols) do
       {:error, :no_default_value}
     end,
     def default(:agglevelsup) do

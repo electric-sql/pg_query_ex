@@ -1,7 +1,8 @@
 # credo:disable-for-this-file
 defmodule PgQuery.TableFunc do
   @moduledoc false
-  defstruct ns_uris: [],
+  defstruct functype: :TABLE_FUNC_TYPE_UNDEFINED,
+            ns_uris: [],
             ns_names: [],
             docexpr: nil,
             rowexpr: nil,
@@ -11,7 +12,10 @@ defmodule PgQuery.TableFunc do
             colcollations: [],
             colexprs: [],
             coldefexprs: [],
+            colvalexprs: [],
+            passingvalexprs: [],
             notnulls: [],
+            plan: nil,
             ordinalitycol: 0,
             location: 0
 
@@ -29,6 +33,7 @@ defmodule PgQuery.TableFunc do
       @spec encode!(struct) :: iodata | no_return
       def encode!(msg) do
         []
+        |> encode_functype(msg)
         |> encode_ns_uris(msg)
         |> encode_ns_names(msg)
         |> encode_docexpr(msg)
@@ -39,7 +44,10 @@ defmodule PgQuery.TableFunc do
         |> encode_colcollations(msg)
         |> encode_colexprs(msg)
         |> encode_coldefexprs(msg)
+        |> encode_colvalexprs(msg)
+        |> encode_passingvalexprs(msg)
         |> encode_notnulls(msg)
+        |> encode_plan(msg)
         |> encode_ordinalitycol(msg)
         |> encode_location(msg)
       end
@@ -48,6 +56,22 @@ defmodule PgQuery.TableFunc do
     []
 
     [
+      defp encode_functype(acc, msg) do
+        try do
+          if msg.functype == :TABLE_FUNC_TYPE_UNDEFINED do
+            acc
+          else
+            [
+              acc,
+              "\b",
+              msg.functype |> PgQuery.TableFuncType.encode() |> Protox.Encode.encode_enum()
+            ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:functype, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_ns_uris(acc, msg) do
         try do
           case msg.ns_uris do
@@ -58,7 +82,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\n", Protox.Encode.encode_message(value)]
+                  [acc, "\x12", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -77,7 +101,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x12", Protox.Encode.encode_message(value)]
+                  [acc, "\x1A", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -91,7 +115,7 @@ defmodule PgQuery.TableFunc do
           if msg.docexpr == nil do
             acc
           else
-            [acc, "\x1A", Protox.Encode.encode_message(msg.docexpr)]
+            [acc, "\"", Protox.Encode.encode_message(msg.docexpr)]
           end
         rescue
           ArgumentError ->
@@ -103,7 +127,7 @@ defmodule PgQuery.TableFunc do
           if msg.rowexpr == nil do
             acc
           else
-            [acc, "\"", Protox.Encode.encode_message(msg.rowexpr)]
+            [acc, "*", Protox.Encode.encode_message(msg.rowexpr)]
           end
         rescue
           ArgumentError ->
@@ -120,7 +144,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "*", Protox.Encode.encode_message(value)]
+                  [acc, "2", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -139,7 +163,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "2", Protox.Encode.encode_message(value)]
+                  [acc, ":", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -158,7 +182,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, ":", Protox.Encode.encode_message(value)]
+                  [acc, "B", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -177,7 +201,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "B", Protox.Encode.encode_message(value)]
+                  [acc, "J", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -197,7 +221,7 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "J", Protox.Encode.encode_message(value)]
+                  [acc, "R", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -216,13 +240,52 @@ defmodule PgQuery.TableFunc do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "R", Protox.Encode.encode_message(value)]
+                  [acc, "Z", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
         rescue
           ArgumentError ->
             reraise Protox.EncodingError.new(:coldefexprs, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_colvalexprs(acc, msg) do
+        try do
+          case msg.colvalexprs do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "b", Protox.Encode.encode_message(value)]
+                end)
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:colvalexprs, "invalid field value"), __STACKTRACE__
+        end
+      end,
+      defp encode_passingvalexprs(acc, msg) do
+        try do
+          case msg.passingvalexprs do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "j", Protox.Encode.encode_message(value)]
+                end)
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:passingvalexprs, "invalid field value"),
+                    __STACKTRACE__
         end
       end,
       defp encode_notnulls(acc, msg) do
@@ -234,7 +297,7 @@ defmodule PgQuery.TableFunc do
             values ->
               [
                 acc,
-                "Z",
+                "r",
                 (
                   {bytes, len} =
                     Enum.reduce(values, {[], 0}, fn value, {acc, len} ->
@@ -251,12 +314,24 @@ defmodule PgQuery.TableFunc do
             reraise Protox.EncodingError.new(:notnulls, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_plan(acc, msg) do
+        try do
+          if msg.plan == nil do
+            acc
+          else
+            [acc, "z", Protox.Encode.encode_message(msg.plan)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:plan, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_ordinalitycol(acc, msg) do
         try do
           if msg.ordinalitycol == 0 do
             acc
           else
-            [acc, "`", Protox.Encode.encode_int32(msg.ordinalitycol)]
+            [acc, "\x80\x01", Protox.Encode.encode_int32(msg.ordinalitycol)]
           end
         rescue
           ArgumentError ->
@@ -269,7 +344,7 @@ defmodule PgQuery.TableFunc do
           if msg.location == 0 do
             acc
           else
-            [acc, "h", Protox.Encode.encode_int32(msg.location)]
+            [acc, "\x88\x01", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -314,75 +389,94 @@ defmodule PgQuery.TableFunc do
               raise %Protox.IllegalTagError{}
 
             {1, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[ns_uris: msg.ns_uris ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.TableFuncType)
+              {[functype: value], rest}
 
             {2, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[ns_names: msg.ns_names ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {[ns_uris: msg.ns_uris ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {3, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[ns_names: msg.ns_names ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {4, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[docexpr: Protox.MergeMessage.merge(msg.docexpr, PgQuery.Node.decode!(delimited))],
                rest}
 
-            {4, _, bytes} ->
+            {5, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[rowexpr: Protox.MergeMessage.merge(msg.rowexpr, PgQuery.Node.decode!(delimited))],
                rest}
 
-            {5, _, bytes} ->
+            {6, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[colnames: msg.colnames ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {6, _, bytes} ->
+            {7, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[coltypes: msg.coltypes ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {7, _, bytes} ->
+            {8, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[coltypmods: msg.coltypmods ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {8, _, bytes} ->
+            {9, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[colcollations: msg.colcollations ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {9, _, bytes} ->
+            {10, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[colexprs: msg.colexprs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {10, _, bytes} ->
+            {11, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[coldefexprs: msg.coldefexprs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {11, 2, bytes} ->
+            {12, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[colvalexprs: msg.colvalexprs ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {13, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[passingvalexprs: msg.passingvalexprs ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {14, 2, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[notnulls: msg.notnulls ++ Protox.Decode.parse_repeated_uint64([], delimited)],
                rest}
 
-            {11, _, bytes} ->
+            {14, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint64(bytes)
               {[notnulls: msg.notnulls ++ [value]], rest}
 
-            {12, _, bytes} ->
+            {15, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[plan: Protox.MergeMessage.merge(msg.plan, PgQuery.Node.decode!(delimited))], rest}
+
+            {16, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[ordinalitycol: value], rest}
 
-            {13, _, bytes} ->
+            {17, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -443,19 +537,23 @@ defmodule PgQuery.TableFunc do
           }
     def defs() do
       %{
-        1 => {:ns_uris, :unpacked, {:message, PgQuery.Node}},
-        2 => {:ns_names, :unpacked, {:message, PgQuery.Node}},
-        3 => {:docexpr, {:scalar, nil}, {:message, PgQuery.Node}},
-        4 => {:rowexpr, {:scalar, nil}, {:message, PgQuery.Node}},
-        5 => {:colnames, :unpacked, {:message, PgQuery.Node}},
-        6 => {:coltypes, :unpacked, {:message, PgQuery.Node}},
-        7 => {:coltypmods, :unpacked, {:message, PgQuery.Node}},
-        8 => {:colcollations, :unpacked, {:message, PgQuery.Node}},
-        9 => {:colexprs, :unpacked, {:message, PgQuery.Node}},
-        10 => {:coldefexprs, :unpacked, {:message, PgQuery.Node}},
-        11 => {:notnulls, :packed, :uint64},
-        12 => {:ordinalitycol, {:scalar, 0}, :int32},
-        13 => {:location, {:scalar, 0}, :int32}
+        1 => {:functype, {:scalar, :TABLE_FUNC_TYPE_UNDEFINED}, {:enum, PgQuery.TableFuncType}},
+        2 => {:ns_uris, :unpacked, {:message, PgQuery.Node}},
+        3 => {:ns_names, :unpacked, {:message, PgQuery.Node}},
+        4 => {:docexpr, {:scalar, nil}, {:message, PgQuery.Node}},
+        5 => {:rowexpr, {:scalar, nil}, {:message, PgQuery.Node}},
+        6 => {:colnames, :unpacked, {:message, PgQuery.Node}},
+        7 => {:coltypes, :unpacked, {:message, PgQuery.Node}},
+        8 => {:coltypmods, :unpacked, {:message, PgQuery.Node}},
+        9 => {:colcollations, :unpacked, {:message, PgQuery.Node}},
+        10 => {:colexprs, :unpacked, {:message, PgQuery.Node}},
+        11 => {:coldefexprs, :unpacked, {:message, PgQuery.Node}},
+        12 => {:colvalexprs, :unpacked, {:message, PgQuery.Node}},
+        13 => {:passingvalexprs, :unpacked, {:message, PgQuery.Node}},
+        14 => {:notnulls, :packed, :uint64},
+        15 => {:plan, {:scalar, nil}, {:message, PgQuery.Node}},
+        16 => {:ordinalitycol, {:scalar, 0}, :int32},
+        17 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -465,19 +563,23 @@ defmodule PgQuery.TableFunc do
           }
     def defs_by_name() do
       %{
-        colcollations: {8, :unpacked, {:message, PgQuery.Node}},
-        coldefexprs: {10, :unpacked, {:message, PgQuery.Node}},
-        colexprs: {9, :unpacked, {:message, PgQuery.Node}},
-        colnames: {5, :unpacked, {:message, PgQuery.Node}},
-        coltypes: {6, :unpacked, {:message, PgQuery.Node}},
-        coltypmods: {7, :unpacked, {:message, PgQuery.Node}},
-        docexpr: {3, {:scalar, nil}, {:message, PgQuery.Node}},
-        location: {13, {:scalar, 0}, :int32},
-        notnulls: {11, :packed, :uint64},
-        ns_names: {2, :unpacked, {:message, PgQuery.Node}},
-        ns_uris: {1, :unpacked, {:message, PgQuery.Node}},
-        ordinalitycol: {12, {:scalar, 0}, :int32},
-        rowexpr: {4, {:scalar, nil}, {:message, PgQuery.Node}}
+        colcollations: {9, :unpacked, {:message, PgQuery.Node}},
+        coldefexprs: {11, :unpacked, {:message, PgQuery.Node}},
+        colexprs: {10, :unpacked, {:message, PgQuery.Node}},
+        colnames: {6, :unpacked, {:message, PgQuery.Node}},
+        coltypes: {7, :unpacked, {:message, PgQuery.Node}},
+        coltypmods: {8, :unpacked, {:message, PgQuery.Node}},
+        colvalexprs: {12, :unpacked, {:message, PgQuery.Node}},
+        docexpr: {4, {:scalar, nil}, {:message, PgQuery.Node}},
+        functype: {1, {:scalar, :TABLE_FUNC_TYPE_UNDEFINED}, {:enum, PgQuery.TableFuncType}},
+        location: {17, {:scalar, 0}, :int32},
+        notnulls: {14, :packed, :uint64},
+        ns_names: {3, :unpacked, {:message, PgQuery.Node}},
+        ns_uris: {2, :unpacked, {:message, PgQuery.Node}},
+        ordinalitycol: {16, {:scalar, 0}, :int32},
+        passingvalexprs: {13, :unpacked, {:message, PgQuery.Node}},
+        plan: {15, {:scalar, nil}, {:message, PgQuery.Node}},
+        rowexpr: {5, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
   )
@@ -488,11 +590,20 @@ defmodule PgQuery.TableFunc do
       [
         %{
           __struct__: Protox.Field,
+          json_name: "functype",
+          kind: {:scalar, :TABLE_FUNC_TYPE_UNDEFINED},
+          label: :optional,
+          name: :functype,
+          tag: 1,
+          type: {:enum, PgQuery.TableFuncType}
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "nsUris",
           kind: :unpacked,
           label: :repeated,
           name: :ns_uris,
-          tag: 1,
+          tag: 2,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -501,7 +612,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :ns_names,
-          tag: 2,
+          tag: 3,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -510,7 +621,7 @@ defmodule PgQuery.TableFunc do
           kind: {:scalar, nil},
           label: :optional,
           name: :docexpr,
-          tag: 3,
+          tag: 4,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -519,7 +630,7 @@ defmodule PgQuery.TableFunc do
           kind: {:scalar, nil},
           label: :optional,
           name: :rowexpr,
-          tag: 4,
+          tag: 5,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -528,7 +639,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :colnames,
-          tag: 5,
+          tag: 6,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -537,7 +648,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :coltypes,
-          tag: 6,
+          tag: 7,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -546,7 +657,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :coltypmods,
-          tag: 7,
+          tag: 8,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -555,7 +666,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :colcollations,
-          tag: 8,
+          tag: 9,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -564,7 +675,7 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :colexprs,
-          tag: 9,
+          tag: 10,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -573,7 +684,25 @@ defmodule PgQuery.TableFunc do
           kind: :unpacked,
           label: :repeated,
           name: :coldefexprs,
-          tag: 10,
+          tag: 11,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "colvalexprs",
+          kind: :unpacked,
+          label: :repeated,
+          name: :colvalexprs,
+          tag: 12,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "passingvalexprs",
+          kind: :unpacked,
+          label: :repeated,
+          name: :passingvalexprs,
+          tag: 13,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -582,8 +711,17 @@ defmodule PgQuery.TableFunc do
           kind: :packed,
           label: :repeated,
           name: :notnulls,
-          tag: 11,
+          tag: 14,
           type: :uint64
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "plan",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :plan,
+          tag: 15,
+          type: {:message, PgQuery.Node}
         },
         %{
           __struct__: Protox.Field,
@@ -591,7 +729,7 @@ defmodule PgQuery.TableFunc do
           kind: {:scalar, 0},
           label: :optional,
           name: :ordinalitycol,
-          tag: 12,
+          tag: 16,
           type: :int32
         },
         %{
@@ -600,7 +738,7 @@ defmodule PgQuery.TableFunc do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 13,
+          tag: 17,
           type: :int32
         }
       ]
@@ -608,6 +746,35 @@ defmodule PgQuery.TableFunc do
 
     [
       @spec(field_def(atom) :: {:ok, Protox.Field.t()} | {:error, :no_such_field}),
+      (
+        def field_def(:functype) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "functype",
+             kind: {:scalar, :TABLE_FUNC_TYPE_UNDEFINED},
+             label: :optional,
+             name: :functype,
+             tag: 1,
+             type: {:enum, PgQuery.TableFuncType}
+           }}
+        end
+
+        def field_def("functype") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "functype",
+             kind: {:scalar, :TABLE_FUNC_TYPE_UNDEFINED},
+             label: :optional,
+             name: :functype,
+             tag: 1,
+             type: {:enum, PgQuery.TableFuncType}
+           }}
+        end
+
+        []
+      ),
       (
         def field_def(:ns_uris) do
           {:ok,
@@ -617,7 +784,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_uris,
-             tag: 1,
+             tag: 2,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -630,7 +797,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_uris,
-             tag: 1,
+             tag: 2,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -643,7 +810,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_uris,
-             tag: 1,
+             tag: 2,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -657,7 +824,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_names,
-             tag: 2,
+             tag: 3,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -670,7 +837,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_names,
-             tag: 2,
+             tag: 3,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -683,7 +850,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :ns_names,
-             tag: 2,
+             tag: 3,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -697,7 +864,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, nil},
              label: :optional,
              name: :docexpr,
-             tag: 3,
+             tag: 4,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -710,7 +877,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, nil},
              label: :optional,
              name: :docexpr,
-             tag: 3,
+             tag: 4,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -726,7 +893,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, nil},
              label: :optional,
              name: :rowexpr,
-             tag: 4,
+             tag: 5,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -739,7 +906,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, nil},
              label: :optional,
              name: :rowexpr,
-             tag: 4,
+             tag: 5,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -755,7 +922,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colnames,
-             tag: 5,
+             tag: 6,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -768,7 +935,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colnames,
-             tag: 5,
+             tag: 6,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -784,7 +951,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coltypes,
-             tag: 6,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -797,7 +964,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coltypes,
-             tag: 6,
+             tag: 7,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -813,7 +980,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coltypmods,
-             tag: 7,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -826,7 +993,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coltypmods,
-             tag: 7,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -842,7 +1009,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colcollations,
-             tag: 8,
+             tag: 9,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -855,7 +1022,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colcollations,
-             tag: 8,
+             tag: 9,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -871,7 +1038,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colexprs,
-             tag: 9,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -884,7 +1051,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :colexprs,
-             tag: 9,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -900,7 +1067,7 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coldefexprs,
-             tag: 10,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -913,7 +1080,65 @@ defmodule PgQuery.TableFunc do
              kind: :unpacked,
              label: :repeated,
              name: :coldefexprs,
-             tag: 10,
+             tag: 11,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:colvalexprs) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "colvalexprs",
+             kind: :unpacked,
+             label: :repeated,
+             name: :colvalexprs,
+             tag: 12,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("colvalexprs") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "colvalexprs",
+             kind: :unpacked,
+             label: :repeated,
+             name: :colvalexprs,
+             tag: 12,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:passingvalexprs) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "passingvalexprs",
+             kind: :unpacked,
+             label: :repeated,
+             name: :passingvalexprs,
+             tag: 13,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("passingvalexprs") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "passingvalexprs",
+             kind: :unpacked,
+             label: :repeated,
+             name: :passingvalexprs,
+             tag: 13,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -929,7 +1154,7 @@ defmodule PgQuery.TableFunc do
              kind: :packed,
              label: :repeated,
              name: :notnulls,
-             tag: 11,
+             tag: 14,
              type: :uint64
            }}
         end
@@ -942,8 +1167,37 @@ defmodule PgQuery.TableFunc do
              kind: :packed,
              label: :repeated,
              name: :notnulls,
-             tag: 11,
+             tag: 14,
              type: :uint64
+           }}
+        end
+
+        []
+      ),
+      (
+        def field_def(:plan) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "plan",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :plan,
+             tag: 15,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("plan") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "plan",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :plan,
+             tag: 15,
+             type: {:message, PgQuery.Node}
            }}
         end
 
@@ -958,7 +1212,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :ordinalitycol,
-             tag: 12,
+             tag: 16,
              type: :int32
            }}
         end
@@ -971,7 +1225,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :ordinalitycol,
-             tag: 12,
+             tag: 16,
              type: :int32
            }}
         end
@@ -987,7 +1241,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 13,
+             tag: 17,
              type: :int32
            }}
         end
@@ -1000,7 +1254,7 @@ defmodule PgQuery.TableFunc do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 13,
+             tag: 17,
              type: :int32
            }}
         end
@@ -1031,6 +1285,9 @@ defmodule PgQuery.TableFunc do
 
   [
     @spec(default(atom) :: {:ok, boolean | integer | String.t() | float} | {:error, atom}),
+    def default(:functype) do
+      {:ok, :TABLE_FUNC_TYPE_UNDEFINED}
+    end,
     def default(:ns_uris) do
       {:error, :no_default_value}
     end,
@@ -1061,8 +1318,17 @@ defmodule PgQuery.TableFunc do
     def default(:coldefexprs) do
       {:error, :no_default_value}
     end,
+    def default(:colvalexprs) do
+      {:error, :no_default_value}
+    end,
+    def default(:passingvalexprs) do
+      {:error, :no_default_value}
+    end,
     def default(:notnulls) do
       {:error, :no_default_value}
+    end,
+    def default(:plan) do
+      {:ok, nil}
     end,
     def default(:ordinalitycol) do
       {:ok, 0}

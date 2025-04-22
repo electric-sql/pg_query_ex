@@ -5,11 +5,13 @@ defmodule PgQuery.Constraint do
             conname: "",
             deferrable: false,
             initdeferred: false,
-            location: 0,
+            skip_validation: false,
+            initially_valid: false,
             is_no_inherit: false,
             raw_expr: nil,
             cooked_expr: "",
             generated_when: "",
+            inhcount: 0,
             nulls_not_distinct: false,
             keys: [],
             including: [],
@@ -29,8 +31,7 @@ defmodule PgQuery.Constraint do
             fk_del_set_cols: [],
             old_conpfeqop: [],
             old_pktable_oid: 0,
-            skip_validation: false,
-            initially_valid: false
+            location: 0
 
   (
     (
@@ -50,11 +51,13 @@ defmodule PgQuery.Constraint do
         |> encode_conname(msg)
         |> encode_deferrable(msg)
         |> encode_initdeferred(msg)
-        |> encode_location(msg)
+        |> encode_skip_validation(msg)
+        |> encode_initially_valid(msg)
         |> encode_is_no_inherit(msg)
         |> encode_raw_expr(msg)
         |> encode_cooked_expr(msg)
         |> encode_generated_when(msg)
+        |> encode_inhcount(msg)
         |> encode_nulls_not_distinct(msg)
         |> encode_keys(msg)
         |> encode_including(msg)
@@ -74,8 +77,7 @@ defmodule PgQuery.Constraint do
         |> encode_fk_del_set_cols(msg)
         |> encode_old_conpfeqop(msg)
         |> encode_old_pktable_oid(msg)
-        |> encode_skip_validation(msg)
-        |> encode_initially_valid(msg)
+        |> encode_location(msg)
       end
     )
 
@@ -130,16 +132,30 @@ defmodule PgQuery.Constraint do
             reraise Protox.EncodingError.new(:initdeferred, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_location(acc, msg) do
+      defp encode_skip_validation(acc, msg) do
         try do
-          if msg.location == 0 do
+          if msg.skip_validation == false do
             acc
           else
-            [acc, "(", Protox.Encode.encode_int32(msg.location)]
+            [acc, "(", Protox.Encode.encode_bool(msg.skip_validation)]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:location, "invalid field value"), __STACKTRACE__
+            reraise Protox.EncodingError.new(:skip_validation, "invalid field value"),
+                    __STACKTRACE__
+        end
+      end,
+      defp encode_initially_valid(acc, msg) do
+        try do
+          if msg.initially_valid == false do
+            acc
+          else
+            [acc, "0", Protox.Encode.encode_bool(msg.initially_valid)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:initially_valid, "invalid field value"),
+                    __STACKTRACE__
         end
       end,
       defp encode_is_no_inherit(acc, msg) do
@@ -147,7 +163,7 @@ defmodule PgQuery.Constraint do
           if msg.is_no_inherit == false do
             acc
           else
-            [acc, "0", Protox.Encode.encode_bool(msg.is_no_inherit)]
+            [acc, "8", Protox.Encode.encode_bool(msg.is_no_inherit)]
           end
         rescue
           ArgumentError ->
@@ -160,7 +176,7 @@ defmodule PgQuery.Constraint do
           if msg.raw_expr == nil do
             acc
           else
-            [acc, ":", Protox.Encode.encode_message(msg.raw_expr)]
+            [acc, "B", Protox.Encode.encode_message(msg.raw_expr)]
           end
         rescue
           ArgumentError ->
@@ -172,7 +188,7 @@ defmodule PgQuery.Constraint do
           if msg.cooked_expr == "" do
             acc
           else
-            [acc, "B", Protox.Encode.encode_string(msg.cooked_expr)]
+            [acc, "J", Protox.Encode.encode_string(msg.cooked_expr)]
           end
         rescue
           ArgumentError ->
@@ -184,7 +200,7 @@ defmodule PgQuery.Constraint do
           if msg.generated_when == "" do
             acc
           else
-            [acc, "J", Protox.Encode.encode_string(msg.generated_when)]
+            [acc, "R", Protox.Encode.encode_string(msg.generated_when)]
           end
         rescue
           ArgumentError ->
@@ -192,12 +208,24 @@ defmodule PgQuery.Constraint do
                     __STACKTRACE__
         end
       end,
+      defp encode_inhcount(acc, msg) do
+        try do
+          if msg.inhcount == 0 do
+            acc
+          else
+            [acc, "X", Protox.Encode.encode_int32(msg.inhcount)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:inhcount, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_nulls_not_distinct(acc, msg) do
         try do
           if msg.nulls_not_distinct == false do
             acc
           else
-            [acc, "P", Protox.Encode.encode_bool(msg.nulls_not_distinct)]
+            [acc, "`", Protox.Encode.encode_bool(msg.nulls_not_distinct)]
           end
         rescue
           ArgumentError ->
@@ -215,7 +243,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "Z", Protox.Encode.encode_message(value)]
+                  [acc, "j", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -234,7 +262,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "b", Protox.Encode.encode_message(value)]
+                  [acc, "r", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -253,7 +281,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "j", Protox.Encode.encode_message(value)]
+                  [acc, "z", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -272,7 +300,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "r", Protox.Encode.encode_message(value)]
+                  [acc, "\x82\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -286,7 +314,7 @@ defmodule PgQuery.Constraint do
           if msg.indexname == "" do
             acc
           else
-            [acc, "z", Protox.Encode.encode_string(msg.indexname)]
+            [acc, "\x8A\x01", Protox.Encode.encode_string(msg.indexname)]
           end
         rescue
           ArgumentError ->
@@ -298,7 +326,7 @@ defmodule PgQuery.Constraint do
           if msg.indexspace == "" do
             acc
           else
-            [acc, "\x82\x01", Protox.Encode.encode_string(msg.indexspace)]
+            [acc, "\x92\x01", Protox.Encode.encode_string(msg.indexspace)]
           end
         rescue
           ArgumentError ->
@@ -310,7 +338,7 @@ defmodule PgQuery.Constraint do
           if msg.reset_default_tblspc == false do
             acc
           else
-            [acc, "\x88\x01", Protox.Encode.encode_bool(msg.reset_default_tblspc)]
+            [acc, "\x98\x01", Protox.Encode.encode_bool(msg.reset_default_tblspc)]
           end
         rescue
           ArgumentError ->
@@ -323,7 +351,7 @@ defmodule PgQuery.Constraint do
           if msg.access_method == "" do
             acc
           else
-            [acc, "\x92\x01", Protox.Encode.encode_string(msg.access_method)]
+            [acc, "\xA2\x01", Protox.Encode.encode_string(msg.access_method)]
           end
         rescue
           ArgumentError ->
@@ -336,7 +364,7 @@ defmodule PgQuery.Constraint do
           if msg.where_clause == nil do
             acc
           else
-            [acc, "\x9A\x01", Protox.Encode.encode_message(msg.where_clause)]
+            [acc, "\xAA\x01", Protox.Encode.encode_message(msg.where_clause)]
           end
         rescue
           ArgumentError ->
@@ -348,7 +376,7 @@ defmodule PgQuery.Constraint do
           if msg.pktable == nil do
             acc
           else
-            [acc, "\xA2\x01", Protox.Encode.encode_message(msg.pktable)]
+            [acc, "\xB2\x01", Protox.Encode.encode_message(msg.pktable)]
           end
         rescue
           ArgumentError ->
@@ -365,7 +393,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xAA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xBA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -384,7 +412,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xB2\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xC2\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -398,7 +426,7 @@ defmodule PgQuery.Constraint do
           if msg.fk_matchtype == "" do
             acc
           else
-            [acc, "\xBA\x01", Protox.Encode.encode_string(msg.fk_matchtype)]
+            [acc, "\xCA\x01", Protox.Encode.encode_string(msg.fk_matchtype)]
           end
         rescue
           ArgumentError ->
@@ -410,7 +438,7 @@ defmodule PgQuery.Constraint do
           if msg.fk_upd_action == "" do
             acc
           else
-            [acc, "\xC2\x01", Protox.Encode.encode_string(msg.fk_upd_action)]
+            [acc, "\xD2\x01", Protox.Encode.encode_string(msg.fk_upd_action)]
           end
         rescue
           ArgumentError ->
@@ -423,7 +451,7 @@ defmodule PgQuery.Constraint do
           if msg.fk_del_action == "" do
             acc
           else
-            [acc, "\xCA\x01", Protox.Encode.encode_string(msg.fk_del_action)]
+            [acc, "\xDA\x01", Protox.Encode.encode_string(msg.fk_del_action)]
           end
         rescue
           ArgumentError ->
@@ -441,7 +469,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xD2\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xE2\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -461,7 +489,7 @@ defmodule PgQuery.Constraint do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xDA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xEA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -476,7 +504,7 @@ defmodule PgQuery.Constraint do
           if msg.old_pktable_oid == 0 do
             acc
           else
-            [acc, "\xE0\x01", Protox.Encode.encode_uint32(msg.old_pktable_oid)]
+            [acc, "\xF0\x01", Protox.Encode.encode_uint32(msg.old_pktable_oid)]
           end
         rescue
           ArgumentError ->
@@ -484,30 +512,16 @@ defmodule PgQuery.Constraint do
                     __STACKTRACE__
         end
       end,
-      defp encode_skip_validation(acc, msg) do
+      defp encode_location(acc, msg) do
         try do
-          if msg.skip_validation == false do
+          if msg.location == 0 do
             acc
           else
-            [acc, "\xE8\x01", Protox.Encode.encode_bool(msg.skip_validation)]
+            [acc, "\xF8\x01", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:skip_validation, "invalid field value"),
-                    __STACKTRACE__
-        end
-      end,
-      defp encode_initially_valid(acc, msg) do
-        try do
-          if msg.initially_valid == false do
-            acc
-          else
-            [acc, "\xF0\x01", Protox.Encode.encode_bool(msg.initially_valid)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:initially_valid, "invalid field value"),
-                    __STACKTRACE__
+            reraise Protox.EncodingError.new(:location, "invalid field value"), __STACKTRACE__
         end
       end
     ]
@@ -565,14 +579,18 @@ defmodule PgQuery.Constraint do
               {[initdeferred: value], rest}
 
             {5, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_int32(bytes)
-              {[location: value], rest}
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[skip_validation: value], rest}
 
             {6, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[is_no_inherit: value], rest}
+              {[initially_valid: value], rest}
 
             {7, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[is_no_inherit: value], rest}
+
+            {8, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -581,60 +599,64 @@ defmodule PgQuery.Constraint do
                    Protox.MergeMessage.merge(msg.raw_expr, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {8, _, bytes} ->
+            {9, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[cooked_expr: delimited], rest}
 
-            {9, _, bytes} ->
+            {10, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[generated_when: delimited], rest}
 
-            {10, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[nulls_not_distinct: value], rest}
-
             {11, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[keys: msg.keys ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {value, rest} = Protox.Decode.parse_int32(bytes)
+              {[inhcount: value], rest}
 
             {12, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[including: msg.including ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[nulls_not_distinct: value], rest}
 
             {13, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[exclusions: msg.exclusions ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {[keys: msg.keys ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {14, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[options: msg.options ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {[including: msg.including ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {15, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[indexname: delimited], rest}
+              {[exclusions: msg.exclusions ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {16, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[indexspace: delimited], rest}
+              {[options: msg.options ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {17, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[reset_default_tblspc: value], rest}
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[indexname: delimited], rest}
 
             {18, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[access_method: delimited], rest}
+              {[indexspace: delimited], rest}
 
             {19, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[reset_default_tblspc: value], rest}
+
+            {20, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[access_method: delimited], rest}
+
+            {21, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -643,7 +665,7 @@ defmodule PgQuery.Constraint do
                    Protox.MergeMessage.merge(msg.where_clause, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {20, _, bytes} ->
+            {22, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -652,52 +674,48 @@ defmodule PgQuery.Constraint do
                    Protox.MergeMessage.merge(msg.pktable, PgQuery.RangeVar.decode!(delimited))
                ], rest}
 
-            {21, _, bytes} ->
+            {23, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[fk_attrs: msg.fk_attrs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {22, _, bytes} ->
+            {24, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[pk_attrs: msg.pk_attrs ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {23, _, bytes} ->
+            {25, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[fk_matchtype: delimited], rest}
 
-            {24, _, bytes} ->
+            {26, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[fk_upd_action: delimited], rest}
 
-            {25, _, bytes} ->
+            {27, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[fk_del_action: delimited], rest}
 
-            {26, _, bytes} ->
+            {28, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[fk_del_set_cols: msg.fk_del_set_cols ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {27, _, bytes} ->
+            {29, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[old_conpfeqop: msg.old_conpfeqop ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {28, _, bytes} ->
+            {30, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[old_pktable_oid: value], rest}
 
-            {29, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[skip_validation: value], rest}
-
-            {30, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[initially_valid: value], rest}
+            {31, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_int32(bytes)
+              {[location: value], rest}
 
             {tag, wire_type, rest} ->
               {_, rest} = Protox.Decode.parse_unknown(tag, wire_type, rest)
@@ -760,32 +778,33 @@ defmodule PgQuery.Constraint do
         2 => {:conname, {:scalar, ""}, :string},
         3 => {:deferrable, {:scalar, false}, :bool},
         4 => {:initdeferred, {:scalar, false}, :bool},
-        5 => {:location, {:scalar, 0}, :int32},
-        6 => {:is_no_inherit, {:scalar, false}, :bool},
-        7 => {:raw_expr, {:scalar, nil}, {:message, PgQuery.Node}},
-        8 => {:cooked_expr, {:scalar, ""}, :string},
-        9 => {:generated_when, {:scalar, ""}, :string},
-        10 => {:nulls_not_distinct, {:scalar, false}, :bool},
-        11 => {:keys, :unpacked, {:message, PgQuery.Node}},
-        12 => {:including, :unpacked, {:message, PgQuery.Node}},
-        13 => {:exclusions, :unpacked, {:message, PgQuery.Node}},
-        14 => {:options, :unpacked, {:message, PgQuery.Node}},
-        15 => {:indexname, {:scalar, ""}, :string},
-        16 => {:indexspace, {:scalar, ""}, :string},
-        17 => {:reset_default_tblspc, {:scalar, false}, :bool},
-        18 => {:access_method, {:scalar, ""}, :string},
-        19 => {:where_clause, {:scalar, nil}, {:message, PgQuery.Node}},
-        20 => {:pktable, {:scalar, nil}, {:message, PgQuery.RangeVar}},
-        21 => {:fk_attrs, :unpacked, {:message, PgQuery.Node}},
-        22 => {:pk_attrs, :unpacked, {:message, PgQuery.Node}},
-        23 => {:fk_matchtype, {:scalar, ""}, :string},
-        24 => {:fk_upd_action, {:scalar, ""}, :string},
-        25 => {:fk_del_action, {:scalar, ""}, :string},
-        26 => {:fk_del_set_cols, :unpacked, {:message, PgQuery.Node}},
-        27 => {:old_conpfeqop, :unpacked, {:message, PgQuery.Node}},
-        28 => {:old_pktable_oid, {:scalar, 0}, :uint32},
-        29 => {:skip_validation, {:scalar, false}, :bool},
-        30 => {:initially_valid, {:scalar, false}, :bool}
+        5 => {:skip_validation, {:scalar, false}, :bool},
+        6 => {:initially_valid, {:scalar, false}, :bool},
+        7 => {:is_no_inherit, {:scalar, false}, :bool},
+        8 => {:raw_expr, {:scalar, nil}, {:message, PgQuery.Node}},
+        9 => {:cooked_expr, {:scalar, ""}, :string},
+        10 => {:generated_when, {:scalar, ""}, :string},
+        11 => {:inhcount, {:scalar, 0}, :int32},
+        12 => {:nulls_not_distinct, {:scalar, false}, :bool},
+        13 => {:keys, :unpacked, {:message, PgQuery.Node}},
+        14 => {:including, :unpacked, {:message, PgQuery.Node}},
+        15 => {:exclusions, :unpacked, {:message, PgQuery.Node}},
+        16 => {:options, :unpacked, {:message, PgQuery.Node}},
+        17 => {:indexname, {:scalar, ""}, :string},
+        18 => {:indexspace, {:scalar, ""}, :string},
+        19 => {:reset_default_tblspc, {:scalar, false}, :bool},
+        20 => {:access_method, {:scalar, ""}, :string},
+        21 => {:where_clause, {:scalar, nil}, {:message, PgQuery.Node}},
+        22 => {:pktable, {:scalar, nil}, {:message, PgQuery.RangeVar}},
+        23 => {:fk_attrs, :unpacked, {:message, PgQuery.Node}},
+        24 => {:pk_attrs, :unpacked, {:message, PgQuery.Node}},
+        25 => {:fk_matchtype, {:scalar, ""}, :string},
+        26 => {:fk_upd_action, {:scalar, ""}, :string},
+        27 => {:fk_del_action, {:scalar, ""}, :string},
+        28 => {:fk_del_set_cols, :unpacked, {:message, PgQuery.Node}},
+        29 => {:old_conpfeqop, :unpacked, {:message, PgQuery.Node}},
+        30 => {:old_pktable_oid, {:scalar, 0}, :uint32},
+        31 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -795,36 +814,37 @@ defmodule PgQuery.Constraint do
           }
     def defs_by_name() do
       %{
-        access_method: {18, {:scalar, ""}, :string},
+        access_method: {20, {:scalar, ""}, :string},
         conname: {2, {:scalar, ""}, :string},
         contype: {1, {:scalar, :CONSTR_TYPE_UNDEFINED}, {:enum, PgQuery.ConstrType}},
-        cooked_expr: {8, {:scalar, ""}, :string},
+        cooked_expr: {9, {:scalar, ""}, :string},
         deferrable: {3, {:scalar, false}, :bool},
-        exclusions: {13, :unpacked, {:message, PgQuery.Node}},
-        fk_attrs: {21, :unpacked, {:message, PgQuery.Node}},
-        fk_del_action: {25, {:scalar, ""}, :string},
-        fk_del_set_cols: {26, :unpacked, {:message, PgQuery.Node}},
-        fk_matchtype: {23, {:scalar, ""}, :string},
-        fk_upd_action: {24, {:scalar, ""}, :string},
-        generated_when: {9, {:scalar, ""}, :string},
-        including: {12, :unpacked, {:message, PgQuery.Node}},
-        indexname: {15, {:scalar, ""}, :string},
-        indexspace: {16, {:scalar, ""}, :string},
+        exclusions: {15, :unpacked, {:message, PgQuery.Node}},
+        fk_attrs: {23, :unpacked, {:message, PgQuery.Node}},
+        fk_del_action: {27, {:scalar, ""}, :string},
+        fk_del_set_cols: {28, :unpacked, {:message, PgQuery.Node}},
+        fk_matchtype: {25, {:scalar, ""}, :string},
+        fk_upd_action: {26, {:scalar, ""}, :string},
+        generated_when: {10, {:scalar, ""}, :string},
+        including: {14, :unpacked, {:message, PgQuery.Node}},
+        indexname: {17, {:scalar, ""}, :string},
+        indexspace: {18, {:scalar, ""}, :string},
+        inhcount: {11, {:scalar, 0}, :int32},
         initdeferred: {4, {:scalar, false}, :bool},
-        initially_valid: {30, {:scalar, false}, :bool},
-        is_no_inherit: {6, {:scalar, false}, :bool},
-        keys: {11, :unpacked, {:message, PgQuery.Node}},
-        location: {5, {:scalar, 0}, :int32},
-        nulls_not_distinct: {10, {:scalar, false}, :bool},
-        old_conpfeqop: {27, :unpacked, {:message, PgQuery.Node}},
-        old_pktable_oid: {28, {:scalar, 0}, :uint32},
-        options: {14, :unpacked, {:message, PgQuery.Node}},
-        pk_attrs: {22, :unpacked, {:message, PgQuery.Node}},
-        pktable: {20, {:scalar, nil}, {:message, PgQuery.RangeVar}},
-        raw_expr: {7, {:scalar, nil}, {:message, PgQuery.Node}},
-        reset_default_tblspc: {17, {:scalar, false}, :bool},
-        skip_validation: {29, {:scalar, false}, :bool},
-        where_clause: {19, {:scalar, nil}, {:message, PgQuery.Node}}
+        initially_valid: {6, {:scalar, false}, :bool},
+        is_no_inherit: {7, {:scalar, false}, :bool},
+        keys: {13, :unpacked, {:message, PgQuery.Node}},
+        location: {31, {:scalar, 0}, :int32},
+        nulls_not_distinct: {12, {:scalar, false}, :bool},
+        old_conpfeqop: {29, :unpacked, {:message, PgQuery.Node}},
+        old_pktable_oid: {30, {:scalar, 0}, :uint32},
+        options: {16, :unpacked, {:message, PgQuery.Node}},
+        pk_attrs: {24, :unpacked, {:message, PgQuery.Node}},
+        pktable: {22, {:scalar, nil}, {:message, PgQuery.RangeVar}},
+        raw_expr: {8, {:scalar, nil}, {:message, PgQuery.Node}},
+        reset_default_tblspc: {19, {:scalar, false}, :bool},
+        skip_validation: {5, {:scalar, false}, :bool},
+        where_clause: {21, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
   )
@@ -871,227 +891,11 @@ defmodule PgQuery.Constraint do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "location",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :location,
-          tag: 5,
-          type: :int32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "isNoInherit",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :is_no_inherit,
-          tag: 6,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "rawExpr",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :raw_expr,
-          tag: 7,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "cookedExpr",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :cooked_expr,
-          tag: 8,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "generatedWhen",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :generated_when,
-          tag: 9,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "nullsNotDistinct",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :nulls_not_distinct,
-          tag: 10,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "keys",
-          kind: :unpacked,
-          label: :repeated,
-          name: :keys,
-          tag: 11,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "including",
-          kind: :unpacked,
-          label: :repeated,
-          name: :including,
-          tag: 12,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "exclusions",
-          kind: :unpacked,
-          label: :repeated,
-          name: :exclusions,
-          tag: 13,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "options",
-          kind: :unpacked,
-          label: :repeated,
-          name: :options,
-          tag: 14,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "indexname",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :indexname,
-          tag: 15,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "indexspace",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :indexspace,
-          tag: 16,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "resetDefaultTblspc",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :reset_default_tblspc,
-          tag: 17,
-          type: :bool
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "accessMethod",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :access_method,
-          tag: 18,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "whereClause",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :where_clause,
-          tag: 19,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "pktable",
-          kind: {:scalar, nil},
-          label: :optional,
-          name: :pktable,
-          tag: 20,
-          type: {:message, PgQuery.RangeVar}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "fkAttrs",
-          kind: :unpacked,
-          label: :repeated,
-          name: :fk_attrs,
-          tag: 21,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "pkAttrs",
-          kind: :unpacked,
-          label: :repeated,
-          name: :pk_attrs,
-          tag: 22,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "fkMatchtype",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :fk_matchtype,
-          tag: 23,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "fkUpdAction",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :fk_upd_action,
-          tag: 24,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "fkDelAction",
-          kind: {:scalar, ""},
-          label: :optional,
-          name: :fk_del_action,
-          tag: 25,
-          type: :string
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "fkDelSetCols",
-          kind: :unpacked,
-          label: :repeated,
-          name: :fk_del_set_cols,
-          tag: 26,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "oldConpfeqop",
-          kind: :unpacked,
-          label: :repeated,
-          name: :old_conpfeqop,
-          tag: 27,
-          type: {:message, PgQuery.Node}
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "oldPktableOid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :old_pktable_oid,
-          tag: 28,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "skipValidation",
           kind: {:scalar, false},
           label: :optional,
           name: :skip_validation,
-          tag: 29,
+          tag: 5,
           type: :bool
         },
         %{
@@ -1100,8 +904,233 @@ defmodule PgQuery.Constraint do
           kind: {:scalar, false},
           label: :optional,
           name: :initially_valid,
-          tag: 30,
+          tag: 6,
           type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "isNoInherit",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :is_no_inherit,
+          tag: 7,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "rawExpr",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :raw_expr,
+          tag: 8,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "cookedExpr",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :cooked_expr,
+          tag: 9,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "generatedWhen",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :generated_when,
+          tag: 10,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "inhcount",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :inhcount,
+          tag: 11,
+          type: :int32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "nullsNotDistinct",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :nulls_not_distinct,
+          tag: 12,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "keys",
+          kind: :unpacked,
+          label: :repeated,
+          name: :keys,
+          tag: 13,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "including",
+          kind: :unpacked,
+          label: :repeated,
+          name: :including,
+          tag: 14,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "exclusions",
+          kind: :unpacked,
+          label: :repeated,
+          name: :exclusions,
+          tag: 15,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "options",
+          kind: :unpacked,
+          label: :repeated,
+          name: :options,
+          tag: 16,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "indexname",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :indexname,
+          tag: 17,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "indexspace",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :indexspace,
+          tag: 18,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "resetDefaultTblspc",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :reset_default_tblspc,
+          tag: 19,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "accessMethod",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :access_method,
+          tag: 20,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "whereClause",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :where_clause,
+          tag: 21,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "pktable",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :pktable,
+          tag: 22,
+          type: {:message, PgQuery.RangeVar}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "fkAttrs",
+          kind: :unpacked,
+          label: :repeated,
+          name: :fk_attrs,
+          tag: 23,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "pkAttrs",
+          kind: :unpacked,
+          label: :repeated,
+          name: :pk_attrs,
+          tag: 24,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "fkMatchtype",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :fk_matchtype,
+          tag: 25,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "fkUpdAction",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :fk_upd_action,
+          tag: 26,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "fkDelAction",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :fk_del_action,
+          tag: 27,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "fkDelSetCols",
+          kind: :unpacked,
+          label: :repeated,
+          name: :fk_del_set_cols,
+          tag: 28,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "oldConpfeqop",
+          kind: :unpacked,
+          label: :repeated,
+          name: :old_conpfeqop,
+          tag: 29,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "oldPktableOid",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :old_pktable_oid,
+          tag: 30,
+          type: :uint32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "location",
+          kind: {:scalar, 0},
+          label: :optional,
+          name: :location,
+          tag: 31,
+          type: :int32
         }
       ]
     end
@@ -1225,33 +1254,84 @@ defmodule PgQuery.Constraint do
         []
       ),
       (
-        def field_def(:location) do
+        def field_def(:skip_validation) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "location",
-             kind: {:scalar, 0},
+             json_name: "skipValidation",
+             kind: {:scalar, false},
              label: :optional,
-             name: :location,
+             name: :skip_validation,
              tag: 5,
-             type: :int32
+             type: :bool
            }}
         end
 
-        def field_def("location") do
+        def field_def("skipValidation") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "location",
-             kind: {:scalar, 0},
+             json_name: "skipValidation",
+             kind: {:scalar, false},
              label: :optional,
-             name: :location,
+             name: :skip_validation,
              tag: 5,
-             type: :int32
+             type: :bool
            }}
         end
 
-        []
+        def field_def("skip_validation") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "skipValidation",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :skip_validation,
+             tag: 5,
+             type: :bool
+           }}
+        end
+      ),
+      (
+        def field_def(:initially_valid) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "initiallyValid",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :initially_valid,
+             tag: 6,
+             type: :bool
+           }}
+        end
+
+        def field_def("initiallyValid") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "initiallyValid",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :initially_valid,
+             tag: 6,
+             type: :bool
+           }}
+        end
+
+        def field_def("initially_valid") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "initiallyValid",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :initially_valid,
+             tag: 6,
+             type: :bool
+           }}
+        end
       ),
       (
         def field_def(:is_no_inherit) do
@@ -1262,7 +1342,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :is_no_inherit,
-             tag: 6,
+             tag: 7,
              type: :bool
            }}
         end
@@ -1275,7 +1355,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :is_no_inherit,
-             tag: 6,
+             tag: 7,
              type: :bool
            }}
         end
@@ -1288,7 +1368,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :is_no_inherit,
-             tag: 6,
+             tag: 7,
              type: :bool
            }}
         end
@@ -1302,7 +1382,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_expr,
-             tag: 7,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1315,7 +1395,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_expr,
-             tag: 7,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1328,7 +1408,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_expr,
-             tag: 7,
+             tag: 8,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1342,7 +1422,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :cooked_expr,
-             tag: 8,
+             tag: 9,
              type: :string
            }}
         end
@@ -1355,7 +1435,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :cooked_expr,
-             tag: 8,
+             tag: 9,
              type: :string
            }}
         end
@@ -1368,7 +1448,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :cooked_expr,
-             tag: 8,
+             tag: 9,
              type: :string
            }}
         end
@@ -1382,7 +1462,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :generated_when,
-             tag: 9,
+             tag: 10,
              type: :string
            }}
         end
@@ -1395,7 +1475,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :generated_when,
-             tag: 9,
+             tag: 10,
              type: :string
            }}
         end
@@ -1408,10 +1488,39 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :generated_when,
-             tag: 9,
+             tag: 10,
              type: :string
            }}
         end
+      ),
+      (
+        def field_def(:inhcount) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "inhcount",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :inhcount,
+             tag: 11,
+             type: :int32
+           }}
+        end
+
+        def field_def("inhcount") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "inhcount",
+             kind: {:scalar, 0},
+             label: :optional,
+             name: :inhcount,
+             tag: 11,
+             type: :int32
+           }}
+        end
+
+        []
       ),
       (
         def field_def(:nulls_not_distinct) do
@@ -1422,7 +1531,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :nulls_not_distinct,
-             tag: 10,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1435,7 +1544,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :nulls_not_distinct,
-             tag: 10,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1448,7 +1557,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :nulls_not_distinct,
-             tag: 10,
+             tag: 12,
              type: :bool
            }}
         end
@@ -1462,7 +1571,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :keys,
-             tag: 11,
+             tag: 13,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1475,7 +1584,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :keys,
-             tag: 11,
+             tag: 13,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1491,7 +1600,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :including,
-             tag: 12,
+             tag: 14,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1504,7 +1613,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :including,
-             tag: 12,
+             tag: 14,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1520,7 +1629,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :exclusions,
-             tag: 13,
+             tag: 15,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1533,7 +1642,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :exclusions,
-             tag: 13,
+             tag: 15,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1549,7 +1658,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :options,
-             tag: 14,
+             tag: 16,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1562,7 +1671,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :options,
-             tag: 14,
+             tag: 16,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1578,7 +1687,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :indexname,
-             tag: 15,
+             tag: 17,
              type: :string
            }}
         end
@@ -1591,7 +1700,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :indexname,
-             tag: 15,
+             tag: 17,
              type: :string
            }}
         end
@@ -1607,7 +1716,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :indexspace,
-             tag: 16,
+             tag: 18,
              type: :string
            }}
         end
@@ -1620,7 +1729,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :indexspace,
-             tag: 16,
+             tag: 18,
              type: :string
            }}
         end
@@ -1636,7 +1745,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :reset_default_tblspc,
-             tag: 17,
+             tag: 19,
              type: :bool
            }}
         end
@@ -1649,7 +1758,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :reset_default_tblspc,
-             tag: 17,
+             tag: 19,
              type: :bool
            }}
         end
@@ -1662,7 +1771,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, false},
              label: :optional,
              name: :reset_default_tblspc,
-             tag: 17,
+             tag: 19,
              type: :bool
            }}
         end
@@ -1676,7 +1785,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :access_method,
-             tag: 18,
+             tag: 20,
              type: :string
            }}
         end
@@ -1689,7 +1798,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :access_method,
-             tag: 18,
+             tag: 20,
              type: :string
            }}
         end
@@ -1702,7 +1811,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :access_method,
-             tag: 18,
+             tag: 20,
              type: :string
            }}
         end
@@ -1716,7 +1825,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :where_clause,
-             tag: 19,
+             tag: 21,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1729,7 +1838,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :where_clause,
-             tag: 19,
+             tag: 21,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1742,7 +1851,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :where_clause,
-             tag: 19,
+             tag: 21,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1756,7 +1865,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :pktable,
-             tag: 20,
+             tag: 22,
              type: {:message, PgQuery.RangeVar}
            }}
         end
@@ -1769,7 +1878,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, nil},
              label: :optional,
              name: :pktable,
-             tag: 20,
+             tag: 22,
              type: {:message, PgQuery.RangeVar}
            }}
         end
@@ -1785,7 +1894,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_attrs,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1798,7 +1907,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_attrs,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1811,7 +1920,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_attrs,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1825,7 +1934,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :pk_attrs,
-             tag: 22,
+             tag: 24,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1838,7 +1947,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :pk_attrs,
-             tag: 22,
+             tag: 24,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1851,7 +1960,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :pk_attrs,
-             tag: 22,
+             tag: 24,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1865,7 +1974,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_matchtype,
-             tag: 23,
+             tag: 25,
              type: :string
            }}
         end
@@ -1878,7 +1987,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_matchtype,
-             tag: 23,
+             tag: 25,
              type: :string
            }}
         end
@@ -1891,7 +2000,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_matchtype,
-             tag: 23,
+             tag: 25,
              type: :string
            }}
         end
@@ -1905,7 +2014,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_upd_action,
-             tag: 24,
+             tag: 26,
              type: :string
            }}
         end
@@ -1918,7 +2027,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_upd_action,
-             tag: 24,
+             tag: 26,
              type: :string
            }}
         end
@@ -1931,7 +2040,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_upd_action,
-             tag: 24,
+             tag: 26,
              type: :string
            }}
         end
@@ -1945,7 +2054,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_del_action,
-             tag: 25,
+             tag: 27,
              type: :string
            }}
         end
@@ -1958,7 +2067,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_del_action,
-             tag: 25,
+             tag: 27,
              type: :string
            }}
         end
@@ -1971,7 +2080,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, ""},
              label: :optional,
              name: :fk_del_action,
-             tag: 25,
+             tag: 27,
              type: :string
            }}
         end
@@ -1985,7 +2094,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_del_set_cols,
-             tag: 26,
+             tag: 28,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1998,7 +2107,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_del_set_cols,
-             tag: 26,
+             tag: 28,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2011,7 +2120,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :fk_del_set_cols,
-             tag: 26,
+             tag: 28,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2025,7 +2134,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :old_conpfeqop,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2038,7 +2147,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :old_conpfeqop,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2051,7 +2160,7 @@ defmodule PgQuery.Constraint do
              kind: :unpacked,
              label: :repeated,
              name: :old_conpfeqop,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2065,7 +2174,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, 0},
              label: :optional,
              name: :old_pktable_oid,
-             tag: 28,
+             tag: 30,
              type: :uint32
            }}
         end
@@ -2078,7 +2187,7 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, 0},
              label: :optional,
              name: :old_pktable_oid,
-             tag: 28,
+             tag: 30,
              type: :uint32
            }}
         end
@@ -2091,90 +2200,39 @@ defmodule PgQuery.Constraint do
              kind: {:scalar, 0},
              label: :optional,
              name: :old_pktable_oid,
-             tag: 28,
+             tag: 30,
              type: :uint32
            }}
         end
       ),
       (
-        def field_def(:skip_validation) do
+        def field_def(:location) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "skipValidation",
-             kind: {:scalar, false},
+             json_name: "location",
+             kind: {:scalar, 0},
              label: :optional,
-             name: :skip_validation,
-             tag: 29,
-             type: :bool
+             name: :location,
+             tag: 31,
+             type: :int32
            }}
         end
 
-        def field_def("skipValidation") do
+        def field_def("location") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "skipValidation",
-             kind: {:scalar, false},
+             json_name: "location",
+             kind: {:scalar, 0},
              label: :optional,
-             name: :skip_validation,
-             tag: 29,
-             type: :bool
+             name: :location,
+             tag: 31,
+             type: :int32
            }}
         end
 
-        def field_def("skip_validation") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "skipValidation",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :skip_validation,
-             tag: 29,
-             type: :bool
-           }}
-        end
-      ),
-      (
-        def field_def(:initially_valid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "initiallyValid",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :initially_valid,
-             tag: 30,
-             type: :bool
-           }}
-        end
-
-        def field_def("initiallyValid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "initiallyValid",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :initially_valid,
-             tag: 30,
-             type: :bool
-           }}
-        end
-
-        def field_def("initially_valid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "initiallyValid",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :initially_valid,
-             tag: 30,
-             type: :bool
-           }}
-        end
+        []
       ),
       def field_def(_) do
         {:error, :no_such_field}
@@ -2212,8 +2270,11 @@ defmodule PgQuery.Constraint do
     def default(:initdeferred) do
       {:ok, false}
     end,
-    def default(:location) do
-      {:ok, 0}
+    def default(:skip_validation) do
+      {:ok, false}
+    end,
+    def default(:initially_valid) do
+      {:ok, false}
     end,
     def default(:is_no_inherit) do
       {:ok, false}
@@ -2226,6 +2287,9 @@ defmodule PgQuery.Constraint do
     end,
     def default(:generated_when) do
       {:ok, ""}
+    end,
+    def default(:inhcount) do
+      {:ok, 0}
     end,
     def default(:nulls_not_distinct) do
       {:ok, false}
@@ -2284,11 +2348,8 @@ defmodule PgQuery.Constraint do
     def default(:old_pktable_oid) do
       {:ok, 0}
     end,
-    def default(:skip_validation) do
-      {:ok, false}
-    end,
-    def default(:initially_valid) do
-      {:ok, false}
+    def default(:location) do
+      {:ok, 0}
     end,
     def default(_) do
       {:error, :no_such_field}

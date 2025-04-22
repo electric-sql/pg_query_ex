@@ -4,7 +4,7 @@ defmodule PgQuery.GrantRoleStmt do
   defstruct granted_roles: [],
             grantee_roles: [],
             is_grant: false,
-            admin_opt: false,
+            opt: [],
             grantor: nil,
             behavior: :DROP_BEHAVIOR_UNDEFINED
 
@@ -25,7 +25,7 @@ defmodule PgQuery.GrantRoleStmt do
         |> encode_granted_roles(msg)
         |> encode_grantee_roles(msg)
         |> encode_is_grant(msg)
-        |> encode_admin_opt(msg)
+        |> encode_opt(msg)
         |> encode_grantor(msg)
         |> encode_behavior(msg)
       end
@@ -86,16 +86,23 @@ defmodule PgQuery.GrantRoleStmt do
             reraise Protox.EncodingError.new(:is_grant, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_admin_opt(acc, msg) do
+      defp encode_opt(acc, msg) do
         try do
-          if msg.admin_opt == false do
-            acc
-          else
-            [acc, " ", Protox.Encode.encode_bool(msg.admin_opt)]
+          case msg.opt do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "\"", Protox.Encode.encode_message(value)]
+                end)
+              ]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:admin_opt, "invalid field value"), __STACKTRACE__
+            reraise Protox.EncodingError.new(:opt, "invalid field value"), __STACKTRACE__
         end
       end,
       defp encode_grantor(acc, msg) do
@@ -178,8 +185,9 @@ defmodule PgQuery.GrantRoleStmt do
               {[is_grant: value], rest}
 
             {4, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[admin_opt: value], rest}
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[opt: msg.opt ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {5, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
@@ -254,7 +262,7 @@ defmodule PgQuery.GrantRoleStmt do
         1 => {:granted_roles, :unpacked, {:message, PgQuery.Node}},
         2 => {:grantee_roles, :unpacked, {:message, PgQuery.Node}},
         3 => {:is_grant, {:scalar, false}, :bool},
-        4 => {:admin_opt, {:scalar, false}, :bool},
+        4 => {:opt, :unpacked, {:message, PgQuery.Node}},
         5 => {:grantor, {:scalar, nil}, {:message, PgQuery.RoleSpec}},
         6 => {:behavior, {:scalar, :DROP_BEHAVIOR_UNDEFINED}, {:enum, PgQuery.DropBehavior}}
       }
@@ -266,12 +274,12 @@ defmodule PgQuery.GrantRoleStmt do
           }
     def defs_by_name() do
       %{
-        admin_opt: {4, {:scalar, false}, :bool},
         behavior: {6, {:scalar, :DROP_BEHAVIOR_UNDEFINED}, {:enum, PgQuery.DropBehavior}},
         granted_roles: {1, :unpacked, {:message, PgQuery.Node}},
         grantee_roles: {2, :unpacked, {:message, PgQuery.Node}},
         grantor: {5, {:scalar, nil}, {:message, PgQuery.RoleSpec}},
-        is_grant: {3, {:scalar, false}, :bool}
+        is_grant: {3, {:scalar, false}, :bool},
+        opt: {4, :unpacked, {:message, PgQuery.Node}}
       }
     end
   )
@@ -309,12 +317,12 @@ defmodule PgQuery.GrantRoleStmt do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "adminOpt",
-          kind: {:scalar, false},
-          label: :optional,
-          name: :admin_opt,
+          json_name: "opt",
+          kind: :unpacked,
+          label: :repeated,
+          name: :opt,
           tag: 4,
-          type: :bool
+          type: {:message, PgQuery.Node}
         },
         %{
           __struct__: Protox.Field,
@@ -460,44 +468,33 @@ defmodule PgQuery.GrantRoleStmt do
         end
       ),
       (
-        def field_def(:admin_opt) do
+        def field_def(:opt) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "adminOpt",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :admin_opt,
+             json_name: "opt",
+             kind: :unpacked,
+             label: :repeated,
+             name: :opt,
              tag: 4,
-             type: :bool
+             type: {:message, PgQuery.Node}
            }}
         end
 
-        def field_def("adminOpt") do
+        def field_def("opt") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "adminOpt",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :admin_opt,
+             json_name: "opt",
+             kind: :unpacked,
+             label: :repeated,
+             name: :opt,
              tag: 4,
-             type: :bool
+             type: {:message, PgQuery.Node}
            }}
         end
 
-        def field_def("admin_opt") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "adminOpt",
-             kind: {:scalar, false},
-             label: :optional,
-             name: :admin_opt,
-             tag: 4,
-             type: :bool
-           }}
-        end
+        []
       ),
       (
         def field_def(:grantor) do
@@ -590,8 +587,8 @@ defmodule PgQuery.GrantRoleStmt do
     def default(:is_grant) do
       {:ok, false}
     end,
-    def default(:admin_opt) do
-      {:ok, false}
+    def default(:opt) do
+      {:error, :no_default_value}
     end,
     def default(:grantor) do
       {:ok, nil}

@@ -1,7 +1,11 @@
 # credo:disable-for-this-file
 defmodule PgQuery.XmlSerialize do
   @moduledoc false
-  defstruct xmloption: :XML_OPTION_TYPE_UNDEFINED, expr: nil, type_name: nil, location: 0
+  defstruct xmloption: :XML_OPTION_TYPE_UNDEFINED,
+            expr: nil,
+            type_name: nil,
+            indent: false,
+            location: 0
 
   (
     (
@@ -20,6 +24,7 @@ defmodule PgQuery.XmlSerialize do
         |> encode_xmloption(msg)
         |> encode_expr(msg)
         |> encode_type_name(msg)
+        |> encode_indent(msg)
         |> encode_location(msg)
       end
     )
@@ -67,12 +72,24 @@ defmodule PgQuery.XmlSerialize do
             reraise Protox.EncodingError.new(:type_name, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_indent(acc, msg) do
+        try do
+          if msg.indent == false do
+            acc
+          else
+            [acc, " ", Protox.Encode.encode_bool(msg.indent)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:indent, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_location(acc, msg) do
         try do
           if msg.location == 0 do
             acc
           else
-            [acc, " ", Protox.Encode.encode_int32(msg.location)]
+            [acc, "(", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -135,6 +152,10 @@ defmodule PgQuery.XmlSerialize do
                ], rest}
 
             {4, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_bool(bytes)
+              {[indent: value], rest}
+
+            {5, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -198,7 +219,8 @@ defmodule PgQuery.XmlSerialize do
         1 => {:xmloption, {:scalar, :XML_OPTION_TYPE_UNDEFINED}, {:enum, PgQuery.XmlOptionType}},
         2 => {:expr, {:scalar, nil}, {:message, PgQuery.Node}},
         3 => {:type_name, {:scalar, nil}, {:message, PgQuery.TypeName}},
-        4 => {:location, {:scalar, 0}, :int32}
+        4 => {:indent, {:scalar, false}, :bool},
+        5 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -209,7 +231,8 @@ defmodule PgQuery.XmlSerialize do
     def defs_by_name() do
       %{
         expr: {2, {:scalar, nil}, {:message, PgQuery.Node}},
-        location: {4, {:scalar, 0}, :int32},
+        indent: {4, {:scalar, false}, :bool},
+        location: {5, {:scalar, 0}, :int32},
         type_name: {3, {:scalar, nil}, {:message, PgQuery.TypeName}},
         xmloption: {1, {:scalar, :XML_OPTION_TYPE_UNDEFINED}, {:enum, PgQuery.XmlOptionType}}
       }
@@ -249,11 +272,20 @@ defmodule PgQuery.XmlSerialize do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "indent",
+          kind: {:scalar, false},
+          label: :optional,
+          name: :indent,
+          tag: 4,
+          type: :bool
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "location",
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 4,
+          tag: 5,
           type: :int32
         }
       ]
@@ -360,6 +392,35 @@ defmodule PgQuery.XmlSerialize do
         end
       ),
       (
+        def field_def(:indent) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "indent",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :indent,
+             tag: 4,
+             type: :bool
+           }}
+        end
+
+        def field_def("indent") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "indent",
+             kind: {:scalar, false},
+             label: :optional,
+             name: :indent,
+             tag: 4,
+             type: :bool
+           }}
+        end
+
+        []
+      ),
+      (
         def field_def(:location) do
           {:ok,
            %{
@@ -368,7 +429,7 @@ defmodule PgQuery.XmlSerialize do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 4,
+             tag: 5,
              type: :int32
            }}
         end
@@ -381,7 +442,7 @@ defmodule PgQuery.XmlSerialize do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 4,
+             tag: 5,
              type: :int32
            }}
         end
@@ -420,6 +481,9 @@ defmodule PgQuery.XmlSerialize do
     end,
     def default(:type_name) do
       {:ok, nil}
+    end,
+    def default(:indent) do
+      {:ok, false}
     end,
     def default(:location) do
       {:ok, 0}

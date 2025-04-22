@@ -1,0 +1,142 @@
+# credo:disable-for-this-file
+defmodule PgQuery.JsonTableColumnType do
+  @moduledoc false
+  (
+    defstruct []
+
+    (
+      @spec default() :: :JSON_TABLE_COLUMN_TYPE_UNDEFINED
+      def default() do
+        :JSON_TABLE_COLUMN_TYPE_UNDEFINED
+      end
+    )
+
+    @spec encode(atom() | String.t()) :: integer() | atom()
+    [
+      (
+        def encode(:JSON_TABLE_COLUMN_TYPE_UNDEFINED) do
+          0
+        end
+
+        def encode("JSON_TABLE_COLUMN_TYPE_UNDEFINED") do
+          0
+        end
+      ),
+      (
+        def encode(:JTC_FOR_ORDINALITY) do
+          1
+        end
+
+        def encode("JTC_FOR_ORDINALITY") do
+          1
+        end
+      ),
+      (
+        def encode(:JTC_REGULAR) do
+          2
+        end
+
+        def encode("JTC_REGULAR") do
+          2
+        end
+      ),
+      (
+        def encode(:JTC_EXISTS) do
+          3
+        end
+
+        def encode("JTC_EXISTS") do
+          3
+        end
+      ),
+      (
+        def encode(:JTC_FORMATTED) do
+          4
+        end
+
+        def encode("JTC_FORMATTED") do
+          4
+        end
+      ),
+      (
+        def encode(:JTC_NESTED) do
+          5
+        end
+
+        def encode("JTC_NESTED") do
+          5
+        end
+      )
+    ]
+
+    def encode(x) do
+      x
+    end
+
+    @spec decode(integer()) :: atom() | integer()
+    [
+      def decode(0) do
+        :JSON_TABLE_COLUMN_TYPE_UNDEFINED
+      end,
+      def decode(1) do
+        :JTC_FOR_ORDINALITY
+      end,
+      def decode(2) do
+        :JTC_REGULAR
+      end,
+      def decode(3) do
+        :JTC_EXISTS
+      end,
+      def decode(4) do
+        :JTC_FORMATTED
+      end,
+      def decode(5) do
+        :JTC_NESTED
+      end
+    ]
+
+    def decode(x) do
+      x
+    end
+
+    @spec constants() :: [{integer(), atom()}]
+    def constants() do
+      [
+        {0, :JSON_TABLE_COLUMN_TYPE_UNDEFINED},
+        {1, :JTC_FOR_ORDINALITY},
+        {2, :JTC_REGULAR},
+        {3, :JTC_EXISTS},
+        {4, :JTC_FORMATTED},
+        {5, :JTC_NESTED}
+      ]
+    end
+
+    @spec has_constant?(any()) :: boolean()
+    (
+      [
+        def has_constant?(:JSON_TABLE_COLUMN_TYPE_UNDEFINED) do
+          true
+        end,
+        def has_constant?(:JTC_FOR_ORDINALITY) do
+          true
+        end,
+        def has_constant?(:JTC_REGULAR) do
+          true
+        end,
+        def has_constant?(:JTC_EXISTS) do
+          true
+        end,
+        def has_constant?(:JTC_FORMATTED) do
+          true
+        end,
+        def has_constant?(:JTC_NESTED) do
+          true
+        end
+      ]
+
+      def has_constant?(_) do
+        false
+      end
+    )
+  )
+end

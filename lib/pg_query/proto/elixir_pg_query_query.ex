@@ -18,9 +18,11 @@ defmodule PgQuery.Query do
             is_return: false,
             cte_list: [],
             rtable: [],
+            rteperminfos: [],
             jointree: nil,
             merge_action_list: [],
-            merge_use_outer_join: false,
+            merge_target_relation: 0,
+            merge_join_condition: nil,
             target_list: [],
             override: :OVERRIDING_KIND_UNDEFINED,
             on_conflict: nil,
@@ -73,9 +75,11 @@ defmodule PgQuery.Query do
         |> encode_is_return(msg)
         |> encode_cte_list(msg)
         |> encode_rtable(msg)
+        |> encode_rteperminfos(msg)
         |> encode_jointree(msg)
         |> encode_merge_action_list(msg)
-        |> encode_merge_use_outer_join(msg)
+        |> encode_merge_target_relation(msg)
+        |> encode_merge_join_condition(msg)
         |> encode_target_list(msg)
         |> encode_override(msg)
         |> encode_on_conflict(msg)
@@ -337,12 +341,31 @@ defmodule PgQuery.Query do
             reraise Protox.EncodingError.new(:rtable, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_rteperminfos(acc, msg) do
+        try do
+          case msg.rteperminfos do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "\x92\x01", Protox.Encode.encode_message(value)]
+                end)
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:rteperminfos, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_jointree(acc, msg) do
         try do
           if msg.jointree == nil do
             acc
           else
-            [acc, "\x92\x01", Protox.Encode.encode_message(msg.jointree)]
+            [acc, "\x9A\x01", Protox.Encode.encode_message(msg.jointree)]
           end
         rescue
           ArgumentError ->
@@ -359,7 +382,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x9A\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xA2\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -369,16 +392,29 @@ defmodule PgQuery.Query do
                     __STACKTRACE__
         end
       end,
-      defp encode_merge_use_outer_join(acc, msg) do
+      defp encode_merge_target_relation(acc, msg) do
         try do
-          if msg.merge_use_outer_join == false do
+          if msg.merge_target_relation == 0 do
             acc
           else
-            [acc, "\xA0\x01", Protox.Encode.encode_bool(msg.merge_use_outer_join)]
+            [acc, "\xA8\x01", Protox.Encode.encode_int32(msg.merge_target_relation)]
           end
         rescue
           ArgumentError ->
-            reraise Protox.EncodingError.new(:merge_use_outer_join, "invalid field value"),
+            reraise Protox.EncodingError.new(:merge_target_relation, "invalid field value"),
+                    __STACKTRACE__
+        end
+      end,
+      defp encode_merge_join_condition(acc, msg) do
+        try do
+          if msg.merge_join_condition == nil do
+            acc
+          else
+            [acc, "\xB2\x01", Protox.Encode.encode_message(msg.merge_join_condition)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:merge_join_condition, "invalid field value"),
                     __STACKTRACE__
         end
       end,
@@ -392,7 +428,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xAA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xBA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -408,7 +444,7 @@ defmodule PgQuery.Query do
           else
             [
               acc,
-              "\xB0\x01",
+              "\xC0\x01",
               msg.override |> PgQuery.OverridingKind.encode() |> Protox.Encode.encode_enum()
             ]
           end
@@ -422,7 +458,7 @@ defmodule PgQuery.Query do
           if msg.on_conflict == nil do
             acc
           else
-            [acc, "\xBA\x01", Protox.Encode.encode_message(msg.on_conflict)]
+            [acc, "\xCA\x01", Protox.Encode.encode_message(msg.on_conflict)]
           end
         rescue
           ArgumentError ->
@@ -439,7 +475,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xC2\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xD2\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -459,7 +495,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xCA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xDA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -473,7 +509,7 @@ defmodule PgQuery.Query do
           if msg.group_distinct == false do
             acc
           else
-            [acc, "\xD0\x01", Protox.Encode.encode_bool(msg.group_distinct)]
+            [acc, "\xE0\x01", Protox.Encode.encode_bool(msg.group_distinct)]
           end
         rescue
           ArgumentError ->
@@ -491,7 +527,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xDA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xEA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -506,7 +542,7 @@ defmodule PgQuery.Query do
           if msg.having_qual == nil do
             acc
           else
-            [acc, "\xE2\x01", Protox.Encode.encode_message(msg.having_qual)]
+            [acc, "\xF2\x01", Protox.Encode.encode_message(msg.having_qual)]
           end
         rescue
           ArgumentError ->
@@ -523,7 +559,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xEA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\xFA\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -543,7 +579,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xF2\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\x82\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -563,7 +599,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xFA\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\x8A\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -577,7 +613,7 @@ defmodule PgQuery.Query do
           if msg.limit_offset == nil do
             acc
           else
-            [acc, "\x82\x02", Protox.Encode.encode_message(msg.limit_offset)]
+            [acc, "\x92\x02", Protox.Encode.encode_message(msg.limit_offset)]
           end
         rescue
           ArgumentError ->
@@ -589,7 +625,7 @@ defmodule PgQuery.Query do
           if msg.limit_count == nil do
             acc
           else
-            [acc, "\x8A\x02", Protox.Encode.encode_message(msg.limit_count)]
+            [acc, "\x9A\x02", Protox.Encode.encode_message(msg.limit_count)]
           end
         rescue
           ArgumentError ->
@@ -603,7 +639,7 @@ defmodule PgQuery.Query do
           else
             [
               acc,
-              "\x90\x02",
+              "\xA0\x02",
               msg.limit_option |> PgQuery.LimitOption.encode() |> Protox.Encode.encode_enum()
             ]
           end
@@ -622,7 +658,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x9A\x02", Protox.Encode.encode_message(value)]
+                  [acc, "\xAA\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -636,7 +672,7 @@ defmodule PgQuery.Query do
           if msg.set_operations == nil do
             acc
           else
-            [acc, "\xA2\x02", Protox.Encode.encode_message(msg.set_operations)]
+            [acc, "\xB2\x02", Protox.Encode.encode_message(msg.set_operations)]
           end
         rescue
           ArgumentError ->
@@ -654,7 +690,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xAA\x02", Protox.Encode.encode_message(value)]
+                  [acc, "\xBA\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -674,7 +710,7 @@ defmodule PgQuery.Query do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\xB2\x02", Protox.Encode.encode_message(value)]
+                  [acc, "\xC2\x02", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -689,7 +725,7 @@ defmodule PgQuery.Query do
           if msg.stmt_location == 0 do
             acc
           else
-            [acc, "\xB8\x02", Protox.Encode.encode_int32(msg.stmt_location)]
+            [acc, "\xC8\x02", Protox.Encode.encode_int32(msg.stmt_location)]
           end
         rescue
           ArgumentError ->
@@ -702,7 +738,7 @@ defmodule PgQuery.Query do
           if msg.stmt_len == 0 do
             acc
           else
-            [acc, "\xC0\x02", Protox.Encode.encode_int32(msg.stmt_len)]
+            [acc, "\xD0\x02", Protox.Encode.encode_int32(msg.stmt_len)]
           end
         rescue
           ArgumentError ->
@@ -824,33 +860,50 @@ defmodule PgQuery.Query do
             {18, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[rteperminfos: msg.rteperminfos ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {19, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[
                  jointree:
                    Protox.MergeMessage.merge(msg.jointree, PgQuery.FromExpr.decode!(delimited))
                ], rest}
 
-            {19, _, bytes} ->
+            {20, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[merge_action_list: msg.merge_action_list ++ [PgQuery.Node.decode!(delimited)]],
                rest}
 
-            {20, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_bool(bytes)
-              {[merge_use_outer_join: value], rest}
-
             {21, _, bytes} ->
+              {value, rest} = Protox.Decode.parse_int32(bytes)
+              {[merge_target_relation: value], rest}
+
+            {22, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+
+              {[
+                 merge_join_condition:
+                   Protox.MergeMessage.merge(
+                     msg.merge_join_condition,
+                     PgQuery.Node.decode!(delimited)
+                   )
+               ], rest}
+
+            {23, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[target_list: msg.target_list ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {22, _, bytes} ->
+            {24, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.OverridingKind)
               {[override: value], rest}
 
-            {23, _, bytes} ->
+            {25, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -862,26 +915,26 @@ defmodule PgQuery.Query do
                    )
                ], rest}
 
-            {24, _, bytes} ->
+            {26, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[returning_list: msg.returning_list ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {25, _, bytes} ->
+            {27, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[group_clause: msg.group_clause ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {26, _, bytes} ->
+            {28, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[group_distinct: value], rest}
 
-            {27, _, bytes} ->
+            {29, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[grouping_sets: msg.grouping_sets ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {28, _, bytes} ->
+            {30, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -890,22 +943,22 @@ defmodule PgQuery.Query do
                    Protox.MergeMessage.merge(msg.having_qual, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {29, _, bytes} ->
+            {31, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[window_clause: msg.window_clause ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {30, _, bytes} ->
+            {32, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[distinct_clause: msg.distinct_clause ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {31, _, bytes} ->
+            {33, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[sort_clause: msg.sort_clause ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {32, _, bytes} ->
+            {34, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -914,7 +967,7 @@ defmodule PgQuery.Query do
                    Protox.MergeMessage.merge(msg.limit_offset, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {33, _, bytes} ->
+            {35, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -923,16 +976,16 @@ defmodule PgQuery.Query do
                    Protox.MergeMessage.merge(msg.limit_count, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {34, _, bytes} ->
+            {36, _, bytes} ->
               {value, rest} = Protox.Decode.parse_enum(bytes, PgQuery.LimitOption)
               {[limit_option: value], rest}
 
-            {35, _, bytes} ->
+            {37, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[row_marks: msg.row_marks ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {36, _, bytes} ->
+            {38, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -941,23 +994,23 @@ defmodule PgQuery.Query do
                    Protox.MergeMessage.merge(msg.set_operations, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {37, _, bytes} ->
+            {39, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[constraint_deps: msg.constraint_deps ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {38, _, bytes} ->
+            {40, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[with_check_options: msg.with_check_options ++ [PgQuery.Node.decode!(delimited)]],
                rest}
 
-            {39, _, bytes} ->
+            {41, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[stmt_location: value], rest}
 
-            {40, _, bytes} ->
+            {42, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[stmt_len: value], rest}
 
@@ -1035,29 +1088,31 @@ defmodule PgQuery.Query do
         15 => {:is_return, {:scalar, false}, :bool},
         16 => {:cte_list, :unpacked, {:message, PgQuery.Node}},
         17 => {:rtable, :unpacked, {:message, PgQuery.Node}},
-        18 => {:jointree, {:scalar, nil}, {:message, PgQuery.FromExpr}},
-        19 => {:merge_action_list, :unpacked, {:message, PgQuery.Node}},
-        20 => {:merge_use_outer_join, {:scalar, false}, :bool},
-        21 => {:target_list, :unpacked, {:message, PgQuery.Node}},
-        22 => {:override, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
-        23 => {:on_conflict, {:scalar, nil}, {:message, PgQuery.OnConflictExpr}},
-        24 => {:returning_list, :unpacked, {:message, PgQuery.Node}},
-        25 => {:group_clause, :unpacked, {:message, PgQuery.Node}},
-        26 => {:group_distinct, {:scalar, false}, :bool},
-        27 => {:grouping_sets, :unpacked, {:message, PgQuery.Node}},
-        28 => {:having_qual, {:scalar, nil}, {:message, PgQuery.Node}},
-        29 => {:window_clause, :unpacked, {:message, PgQuery.Node}},
-        30 => {:distinct_clause, :unpacked, {:message, PgQuery.Node}},
-        31 => {:sort_clause, :unpacked, {:message, PgQuery.Node}},
-        32 => {:limit_offset, {:scalar, nil}, {:message, PgQuery.Node}},
-        33 => {:limit_count, {:scalar, nil}, {:message, PgQuery.Node}},
-        34 => {:limit_option, {:scalar, :LIMIT_OPTION_UNDEFINED}, {:enum, PgQuery.LimitOption}},
-        35 => {:row_marks, :unpacked, {:message, PgQuery.Node}},
-        36 => {:set_operations, {:scalar, nil}, {:message, PgQuery.Node}},
-        37 => {:constraint_deps, :unpacked, {:message, PgQuery.Node}},
-        38 => {:with_check_options, :unpacked, {:message, PgQuery.Node}},
-        39 => {:stmt_location, {:scalar, 0}, :int32},
-        40 => {:stmt_len, {:scalar, 0}, :int32}
+        18 => {:rteperminfos, :unpacked, {:message, PgQuery.Node}},
+        19 => {:jointree, {:scalar, nil}, {:message, PgQuery.FromExpr}},
+        20 => {:merge_action_list, :unpacked, {:message, PgQuery.Node}},
+        21 => {:merge_target_relation, {:scalar, 0}, :int32},
+        22 => {:merge_join_condition, {:scalar, nil}, {:message, PgQuery.Node}},
+        23 => {:target_list, :unpacked, {:message, PgQuery.Node}},
+        24 => {:override, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
+        25 => {:on_conflict, {:scalar, nil}, {:message, PgQuery.OnConflictExpr}},
+        26 => {:returning_list, :unpacked, {:message, PgQuery.Node}},
+        27 => {:group_clause, :unpacked, {:message, PgQuery.Node}},
+        28 => {:group_distinct, {:scalar, false}, :bool},
+        29 => {:grouping_sets, :unpacked, {:message, PgQuery.Node}},
+        30 => {:having_qual, {:scalar, nil}, {:message, PgQuery.Node}},
+        31 => {:window_clause, :unpacked, {:message, PgQuery.Node}},
+        32 => {:distinct_clause, :unpacked, {:message, PgQuery.Node}},
+        33 => {:sort_clause, :unpacked, {:message, PgQuery.Node}},
+        34 => {:limit_offset, {:scalar, nil}, {:message, PgQuery.Node}},
+        35 => {:limit_count, {:scalar, nil}, {:message, PgQuery.Node}},
+        36 => {:limit_option, {:scalar, :LIMIT_OPTION_UNDEFINED}, {:enum, PgQuery.LimitOption}},
+        37 => {:row_marks, :unpacked, {:message, PgQuery.Node}},
+        38 => {:set_operations, {:scalar, nil}, {:message, PgQuery.Node}},
+        39 => {:constraint_deps, :unpacked, {:message, PgQuery.Node}},
+        40 => {:with_check_options, :unpacked, {:message, PgQuery.Node}},
+        41 => {:stmt_location, {:scalar, 0}, :int32},
+        42 => {:stmt_len, {:scalar, 0}, :int32}
       }
     end
 
@@ -1069,12 +1124,12 @@ defmodule PgQuery.Query do
       %{
         can_set_tag: {3, {:scalar, false}, :bool},
         command_type: {1, {:scalar, :CMD_TYPE_UNDEFINED}, {:enum, PgQuery.CmdType}},
-        constraint_deps: {37, :unpacked, {:message, PgQuery.Node}},
+        constraint_deps: {39, :unpacked, {:message, PgQuery.Node}},
         cte_list: {16, :unpacked, {:message, PgQuery.Node}},
-        distinct_clause: {30, :unpacked, {:message, PgQuery.Node}},
-        group_clause: {25, :unpacked, {:message, PgQuery.Node}},
-        group_distinct: {26, {:scalar, false}, :bool},
-        grouping_sets: {27, :unpacked, {:message, PgQuery.Node}},
+        distinct_clause: {32, :unpacked, {:message, PgQuery.Node}},
+        group_clause: {27, :unpacked, {:message, PgQuery.Node}},
+        group_distinct: {28, {:scalar, false}, :bool},
+        grouping_sets: {29, :unpacked, {:message, PgQuery.Node}},
         has_aggs: {6, {:scalar, false}, :bool},
         has_distinct_on: {10, {:scalar, false}, :bool},
         has_for_update: {13, {:scalar, false}, :bool},
@@ -1084,29 +1139,31 @@ defmodule PgQuery.Query do
         has_sub_links: {9, {:scalar, false}, :bool},
         has_target_srfs: {8, {:scalar, false}, :bool},
         has_window_funcs: {7, {:scalar, false}, :bool},
-        having_qual: {28, {:scalar, nil}, {:message, PgQuery.Node}},
+        having_qual: {30, {:scalar, nil}, {:message, PgQuery.Node}},
         is_return: {15, {:scalar, false}, :bool},
-        jointree: {18, {:scalar, nil}, {:message, PgQuery.FromExpr}},
-        limit_count: {33, {:scalar, nil}, {:message, PgQuery.Node}},
-        limit_offset: {32, {:scalar, nil}, {:message, PgQuery.Node}},
-        limit_option: {34, {:scalar, :LIMIT_OPTION_UNDEFINED}, {:enum, PgQuery.LimitOption}},
-        merge_action_list: {19, :unpacked, {:message, PgQuery.Node}},
-        merge_use_outer_join: {20, {:scalar, false}, :bool},
-        on_conflict: {23, {:scalar, nil}, {:message, PgQuery.OnConflictExpr}},
-        override: {22, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
+        jointree: {19, {:scalar, nil}, {:message, PgQuery.FromExpr}},
+        limit_count: {35, {:scalar, nil}, {:message, PgQuery.Node}},
+        limit_offset: {34, {:scalar, nil}, {:message, PgQuery.Node}},
+        limit_option: {36, {:scalar, :LIMIT_OPTION_UNDEFINED}, {:enum, PgQuery.LimitOption}},
+        merge_action_list: {20, :unpacked, {:message, PgQuery.Node}},
+        merge_join_condition: {22, {:scalar, nil}, {:message, PgQuery.Node}},
+        merge_target_relation: {21, {:scalar, 0}, :int32},
+        on_conflict: {25, {:scalar, nil}, {:message, PgQuery.OnConflictExpr}},
+        override: {24, {:scalar, :OVERRIDING_KIND_UNDEFINED}, {:enum, PgQuery.OverridingKind}},
         query_source: {2, {:scalar, :QUERY_SOURCE_UNDEFINED}, {:enum, PgQuery.QuerySource}},
         result_relation: {5, {:scalar, 0}, :int32},
-        returning_list: {24, :unpacked, {:message, PgQuery.Node}},
-        row_marks: {35, :unpacked, {:message, PgQuery.Node}},
+        returning_list: {26, :unpacked, {:message, PgQuery.Node}},
+        row_marks: {37, :unpacked, {:message, PgQuery.Node}},
         rtable: {17, :unpacked, {:message, PgQuery.Node}},
-        set_operations: {36, {:scalar, nil}, {:message, PgQuery.Node}},
-        sort_clause: {31, :unpacked, {:message, PgQuery.Node}},
-        stmt_len: {40, {:scalar, 0}, :int32},
-        stmt_location: {39, {:scalar, 0}, :int32},
-        target_list: {21, :unpacked, {:message, PgQuery.Node}},
+        rteperminfos: {18, :unpacked, {:message, PgQuery.Node}},
+        set_operations: {38, {:scalar, nil}, {:message, PgQuery.Node}},
+        sort_clause: {33, :unpacked, {:message, PgQuery.Node}},
+        stmt_len: {42, {:scalar, 0}, :int32},
+        stmt_location: {41, {:scalar, 0}, :int32},
+        target_list: {23, :unpacked, {:message, PgQuery.Node}},
         utility_stmt: {4, {:scalar, nil}, {:message, PgQuery.Node}},
-        window_clause: {29, :unpacked, {:message, PgQuery.Node}},
-        with_check_options: {38, :unpacked, {:message, PgQuery.Node}}
+        window_clause: {31, :unpacked, {:message, PgQuery.Node}},
+        with_check_options: {40, :unpacked, {:message, PgQuery.Node}}
       }
     end
   )
@@ -1270,11 +1327,20 @@ defmodule PgQuery.Query do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "rteperminfos",
+          kind: :unpacked,
+          label: :repeated,
+          name: :rteperminfos,
+          tag: 18,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "jointree",
           kind: {:scalar, nil},
           label: :optional,
           name: :jointree,
-          tag: 18,
+          tag: 19,
           type: {:message, PgQuery.FromExpr}
         },
         %{
@@ -1283,17 +1349,26 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :merge_action_list,
-          tag: 19,
+          tag: 20,
           type: {:message, PgQuery.Node}
         },
         %{
           __struct__: Protox.Field,
-          json_name: "mergeUseOuterJoin",
-          kind: {:scalar, false},
+          json_name: "mergeTargetRelation",
+          kind: {:scalar, 0},
           label: :optional,
-          name: :merge_use_outer_join,
-          tag: 20,
-          type: :bool
+          name: :merge_target_relation,
+          tag: 21,
+          type: :int32
+        },
+        %{
+          __struct__: Protox.Field,
+          json_name: "mergeJoinCondition",
+          kind: {:scalar, nil},
+          label: :optional,
+          name: :merge_join_condition,
+          tag: 22,
+          type: {:message, PgQuery.Node}
         },
         %{
           __struct__: Protox.Field,
@@ -1301,7 +1376,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :target_list,
-          tag: 21,
+          tag: 23,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1310,7 +1385,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, :OVERRIDING_KIND_UNDEFINED},
           label: :optional,
           name: :override,
-          tag: 22,
+          tag: 24,
           type: {:enum, PgQuery.OverridingKind}
         },
         %{
@@ -1319,7 +1394,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, nil},
           label: :optional,
           name: :on_conflict,
-          tag: 23,
+          tag: 25,
           type: {:message, PgQuery.OnConflictExpr}
         },
         %{
@@ -1328,7 +1403,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :returning_list,
-          tag: 24,
+          tag: 26,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1337,7 +1412,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :group_clause,
-          tag: 25,
+          tag: 27,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1346,7 +1421,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, false},
           label: :optional,
           name: :group_distinct,
-          tag: 26,
+          tag: 28,
           type: :bool
         },
         %{
@@ -1355,7 +1430,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :grouping_sets,
-          tag: 27,
+          tag: 29,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1364,7 +1439,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, nil},
           label: :optional,
           name: :having_qual,
-          tag: 28,
+          tag: 30,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1373,7 +1448,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :window_clause,
-          tag: 29,
+          tag: 31,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1382,7 +1457,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :distinct_clause,
-          tag: 30,
+          tag: 32,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1391,7 +1466,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :sort_clause,
-          tag: 31,
+          tag: 33,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1400,7 +1475,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, nil},
           label: :optional,
           name: :limit_offset,
-          tag: 32,
+          tag: 34,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1409,7 +1484,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, nil},
           label: :optional,
           name: :limit_count,
-          tag: 33,
+          tag: 35,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1418,7 +1493,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, :LIMIT_OPTION_UNDEFINED},
           label: :optional,
           name: :limit_option,
-          tag: 34,
+          tag: 36,
           type: {:enum, PgQuery.LimitOption}
         },
         %{
@@ -1427,7 +1502,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :row_marks,
-          tag: 35,
+          tag: 37,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1436,7 +1511,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, nil},
           label: :optional,
           name: :set_operations,
-          tag: 36,
+          tag: 38,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1445,7 +1520,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :constraint_deps,
-          tag: 37,
+          tag: 39,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1454,7 +1529,7 @@ defmodule PgQuery.Query do
           kind: :unpacked,
           label: :repeated,
           name: :with_check_options,
-          tag: 38,
+          tag: 40,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -1463,7 +1538,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, 0},
           label: :optional,
           name: :stmt_location,
-          tag: 39,
+          tag: 41,
           type: :int32
         },
         %{
@@ -1472,7 +1547,7 @@ defmodule PgQuery.Query do
           kind: {:scalar, 0},
           label: :optional,
           name: :stmt_len,
-          tag: 40,
+          tag: 42,
           type: :int32
         }
       ]
@@ -2150,6 +2225,35 @@ defmodule PgQuery.Query do
         []
       ),
       (
+        def field_def(:rteperminfos) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "rteperminfos",
+             kind: :unpacked,
+             label: :repeated,
+             name: :rteperminfos,
+             tag: 18,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("rteperminfos") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "rteperminfos",
+             kind: :unpacked,
+             label: :repeated,
+             name: :rteperminfos,
+             tag: 18,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        []
+      ),
+      (
         def field_def(:jointree) do
           {:ok,
            %{
@@ -2158,7 +2262,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :jointree,
-             tag: 18,
+             tag: 19,
              type: {:message, PgQuery.FromExpr}
            }}
         end
@@ -2171,7 +2275,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :jointree,
-             tag: 18,
+             tag: 19,
              type: {:message, PgQuery.FromExpr}
            }}
         end
@@ -2187,7 +2291,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :merge_action_list,
-             tag: 19,
+             tag: 20,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2200,7 +2304,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :merge_action_list,
-             tag: 19,
+             tag: 20,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2213,48 +2317,88 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :merge_action_list,
-             tag: 19,
+             tag: 20,
              type: {:message, PgQuery.Node}
            }}
         end
       ),
       (
-        def field_def(:merge_use_outer_join) do
+        def field_def(:merge_target_relation) do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "mergeUseOuterJoin",
-             kind: {:scalar, false},
+             json_name: "mergeTargetRelation",
+             kind: {:scalar, 0},
              label: :optional,
-             name: :merge_use_outer_join,
-             tag: 20,
-             type: :bool
+             name: :merge_target_relation,
+             tag: 21,
+             type: :int32
            }}
         end
 
-        def field_def("mergeUseOuterJoin") do
+        def field_def("mergeTargetRelation") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "mergeUseOuterJoin",
-             kind: {:scalar, false},
+             json_name: "mergeTargetRelation",
+             kind: {:scalar, 0},
              label: :optional,
-             name: :merge_use_outer_join,
-             tag: 20,
-             type: :bool
+             name: :merge_target_relation,
+             tag: 21,
+             type: :int32
            }}
         end
 
-        def field_def("merge_use_outer_join") do
+        def field_def("merge_target_relation") do
           {:ok,
            %{
              __struct__: Protox.Field,
-             json_name: "mergeUseOuterJoin",
-             kind: {:scalar, false},
+             json_name: "mergeTargetRelation",
+             kind: {:scalar, 0},
              label: :optional,
-             name: :merge_use_outer_join,
-             tag: 20,
-             type: :bool
+             name: :merge_target_relation,
+             tag: 21,
+             type: :int32
+           }}
+        end
+      ),
+      (
+        def field_def(:merge_join_condition) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "mergeJoinCondition",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :merge_join_condition,
+             tag: 22,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("mergeJoinCondition") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "mergeJoinCondition",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :merge_join_condition,
+             tag: 22,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("merge_join_condition") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "mergeJoinCondition",
+             kind: {:scalar, nil},
+             label: :optional,
+             name: :merge_join_condition,
+             tag: 22,
+             type: {:message, PgQuery.Node}
            }}
         end
       ),
@@ -2267,7 +2411,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :target_list,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2280,7 +2424,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :target_list,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2293,7 +2437,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :target_list,
-             tag: 21,
+             tag: 23,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2307,7 +2451,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, :OVERRIDING_KIND_UNDEFINED},
              label: :optional,
              name: :override,
-             tag: 22,
+             tag: 24,
              type: {:enum, PgQuery.OverridingKind}
            }}
         end
@@ -2320,7 +2464,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, :OVERRIDING_KIND_UNDEFINED},
              label: :optional,
              name: :override,
-             tag: 22,
+             tag: 24,
              type: {:enum, PgQuery.OverridingKind}
            }}
         end
@@ -2336,7 +2480,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :on_conflict,
-             tag: 23,
+             tag: 25,
              type: {:message, PgQuery.OnConflictExpr}
            }}
         end
@@ -2349,7 +2493,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :on_conflict,
-             tag: 23,
+             tag: 25,
              type: {:message, PgQuery.OnConflictExpr}
            }}
         end
@@ -2362,7 +2506,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :on_conflict,
-             tag: 23,
+             tag: 25,
              type: {:message, PgQuery.OnConflictExpr}
            }}
         end
@@ -2376,7 +2520,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :returning_list,
-             tag: 24,
+             tag: 26,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2389,7 +2533,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :returning_list,
-             tag: 24,
+             tag: 26,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2402,7 +2546,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :returning_list,
-             tag: 24,
+             tag: 26,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2416,7 +2560,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :group_clause,
-             tag: 25,
+             tag: 27,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2429,7 +2573,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :group_clause,
-             tag: 25,
+             tag: 27,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2442,7 +2586,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :group_clause,
-             tag: 25,
+             tag: 27,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2456,7 +2600,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, false},
              label: :optional,
              name: :group_distinct,
-             tag: 26,
+             tag: 28,
              type: :bool
            }}
         end
@@ -2469,7 +2613,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, false},
              label: :optional,
              name: :group_distinct,
-             tag: 26,
+             tag: 28,
              type: :bool
            }}
         end
@@ -2482,7 +2626,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, false},
              label: :optional,
              name: :group_distinct,
-             tag: 26,
+             tag: 28,
              type: :bool
            }}
         end
@@ -2496,7 +2640,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :grouping_sets,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2509,7 +2653,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :grouping_sets,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2522,7 +2666,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :grouping_sets,
-             tag: 27,
+             tag: 29,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2536,7 +2680,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :having_qual,
-             tag: 28,
+             tag: 30,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2549,7 +2693,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :having_qual,
-             tag: 28,
+             tag: 30,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2562,7 +2706,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :having_qual,
-             tag: 28,
+             tag: 30,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2576,7 +2720,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :window_clause,
-             tag: 29,
+             tag: 31,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2589,7 +2733,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :window_clause,
-             tag: 29,
+             tag: 31,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2602,7 +2746,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :window_clause,
-             tag: 29,
+             tag: 31,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2616,7 +2760,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :distinct_clause,
-             tag: 30,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2629,7 +2773,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :distinct_clause,
-             tag: 30,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2642,7 +2786,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :distinct_clause,
-             tag: 30,
+             tag: 32,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2656,7 +2800,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :sort_clause,
-             tag: 31,
+             tag: 33,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2669,7 +2813,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :sort_clause,
-             tag: 31,
+             tag: 33,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2682,7 +2826,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :sort_clause,
-             tag: 31,
+             tag: 33,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2696,7 +2840,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_offset,
-             tag: 32,
+             tag: 34,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2709,7 +2853,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_offset,
-             tag: 32,
+             tag: 34,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2722,7 +2866,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_offset,
-             tag: 32,
+             tag: 34,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2736,7 +2880,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_count,
-             tag: 33,
+             tag: 35,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2749,7 +2893,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_count,
-             tag: 33,
+             tag: 35,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2762,7 +2906,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :limit_count,
-             tag: 33,
+             tag: 35,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2776,7 +2920,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, :LIMIT_OPTION_UNDEFINED},
              label: :optional,
              name: :limit_option,
-             tag: 34,
+             tag: 36,
              type: {:enum, PgQuery.LimitOption}
            }}
         end
@@ -2789,7 +2933,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, :LIMIT_OPTION_UNDEFINED},
              label: :optional,
              name: :limit_option,
-             tag: 34,
+             tag: 36,
              type: {:enum, PgQuery.LimitOption}
            }}
         end
@@ -2802,7 +2946,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, :LIMIT_OPTION_UNDEFINED},
              label: :optional,
              name: :limit_option,
-             tag: 34,
+             tag: 36,
              type: {:enum, PgQuery.LimitOption}
            }}
         end
@@ -2816,7 +2960,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :row_marks,
-             tag: 35,
+             tag: 37,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2829,7 +2973,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :row_marks,
-             tag: 35,
+             tag: 37,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2842,7 +2986,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :row_marks,
-             tag: 35,
+             tag: 37,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2856,7 +3000,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :set_operations,
-             tag: 36,
+             tag: 38,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2869,7 +3013,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :set_operations,
-             tag: 36,
+             tag: 38,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2882,7 +3026,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, nil},
              label: :optional,
              name: :set_operations,
-             tag: 36,
+             tag: 38,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2896,7 +3040,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :constraint_deps,
-             tag: 37,
+             tag: 39,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2909,7 +3053,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :constraint_deps,
-             tag: 37,
+             tag: 39,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2922,7 +3066,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :constraint_deps,
-             tag: 37,
+             tag: 39,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2936,7 +3080,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :with_check_options,
-             tag: 38,
+             tag: 40,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2949,7 +3093,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :with_check_options,
-             tag: 38,
+             tag: 40,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2962,7 +3106,7 @@ defmodule PgQuery.Query do
              kind: :unpacked,
              label: :repeated,
              name: :with_check_options,
-             tag: 38,
+             tag: 40,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -2976,7 +3120,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_location,
-             tag: 39,
+             tag: 41,
              type: :int32
            }}
         end
@@ -2989,7 +3133,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_location,
-             tag: 39,
+             tag: 41,
              type: :int32
            }}
         end
@@ -3002,7 +3146,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_location,
-             tag: 39,
+             tag: 41,
              type: :int32
            }}
         end
@@ -3016,7 +3160,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_len,
-             tag: 40,
+             tag: 42,
              type: :int32
            }}
         end
@@ -3029,7 +3173,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_len,
-             tag: 40,
+             tag: 42,
              type: :int32
            }}
         end
@@ -3042,7 +3186,7 @@ defmodule PgQuery.Query do
              kind: {:scalar, 0},
              label: :optional,
              name: :stmt_len,
-             tag: 40,
+             tag: 42,
              type: :int32
            }}
         end
@@ -3122,14 +3266,20 @@ defmodule PgQuery.Query do
     def default(:rtable) do
       {:error, :no_default_value}
     end,
+    def default(:rteperminfos) do
+      {:error, :no_default_value}
+    end,
     def default(:jointree) do
       {:ok, nil}
     end,
     def default(:merge_action_list) do
       {:error, :no_default_value}
     end,
-    def default(:merge_use_outer_join) do
-      {:ok, false}
+    def default(:merge_target_relation) do
+      {:ok, 0}
+    end,
+    def default(:merge_join_condition) do
+      {:ok, nil}
     end,
     def default(:target_list) do
       {:error, :no_default_value}

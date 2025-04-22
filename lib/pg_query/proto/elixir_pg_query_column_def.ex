@@ -9,6 +9,7 @@ defmodule PgQuery.ColumnDef do
             is_not_null: false,
             is_from_type: false,
             storage: "",
+            storage_name: "",
             raw_default: nil,
             cooked_default: nil,
             identity: "",
@@ -42,6 +43,7 @@ defmodule PgQuery.ColumnDef do
         |> encode_is_not_null(msg)
         |> encode_is_from_type(msg)
         |> encode_storage(msg)
+        |> encode_storage_name(msg)
         |> encode_raw_default(msg)
         |> encode_cooked_default(msg)
         |> encode_identity(msg)
@@ -154,12 +156,24 @@ defmodule PgQuery.ColumnDef do
             reraise Protox.EncodingError.new(:storage, "invalid field value"), __STACKTRACE__
         end
       end,
+      defp encode_storage_name(acc, msg) do
+        try do
+          if msg.storage_name == "" do
+            acc
+          else
+            [acc, "J", Protox.Encode.encode_string(msg.storage_name)]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:storage_name, "invalid field value"), __STACKTRACE__
+        end
+      end,
       defp encode_raw_default(acc, msg) do
         try do
           if msg.raw_default == nil do
             acc
           else
-            [acc, "J", Protox.Encode.encode_message(msg.raw_default)]
+            [acc, "R", Protox.Encode.encode_message(msg.raw_default)]
           end
         rescue
           ArgumentError ->
@@ -171,7 +185,7 @@ defmodule PgQuery.ColumnDef do
           if msg.cooked_default == nil do
             acc
           else
-            [acc, "R", Protox.Encode.encode_message(msg.cooked_default)]
+            [acc, "Z", Protox.Encode.encode_message(msg.cooked_default)]
           end
         rescue
           ArgumentError ->
@@ -184,7 +198,7 @@ defmodule PgQuery.ColumnDef do
           if msg.identity == "" do
             acc
           else
-            [acc, "Z", Protox.Encode.encode_string(msg.identity)]
+            [acc, "b", Protox.Encode.encode_string(msg.identity)]
           end
         rescue
           ArgumentError ->
@@ -196,7 +210,7 @@ defmodule PgQuery.ColumnDef do
           if msg.identity_sequence == nil do
             acc
           else
-            [acc, "b", Protox.Encode.encode_message(msg.identity_sequence)]
+            [acc, "j", Protox.Encode.encode_message(msg.identity_sequence)]
           end
         rescue
           ArgumentError ->
@@ -209,7 +223,7 @@ defmodule PgQuery.ColumnDef do
           if msg.generated == "" do
             acc
           else
-            [acc, "j", Protox.Encode.encode_string(msg.generated)]
+            [acc, "r", Protox.Encode.encode_string(msg.generated)]
           end
         rescue
           ArgumentError ->
@@ -221,7 +235,7 @@ defmodule PgQuery.ColumnDef do
           if msg.coll_clause == nil do
             acc
           else
-            [acc, "r", Protox.Encode.encode_message(msg.coll_clause)]
+            [acc, "z", Protox.Encode.encode_message(msg.coll_clause)]
           end
         rescue
           ArgumentError ->
@@ -233,7 +247,7 @@ defmodule PgQuery.ColumnDef do
           if msg.coll_oid == 0 do
             acc
           else
-            [acc, "x", Protox.Encode.encode_uint32(msg.coll_oid)]
+            [acc, "\x80\x01", Protox.Encode.encode_uint32(msg.coll_oid)]
           end
         rescue
           ArgumentError ->
@@ -250,7 +264,7 @@ defmodule PgQuery.ColumnDef do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x82\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\x8A\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -269,7 +283,7 @@ defmodule PgQuery.ColumnDef do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "\x8A\x01", Protox.Encode.encode_message(value)]
+                  [acc, "\x92\x01", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -283,7 +297,7 @@ defmodule PgQuery.ColumnDef do
           if msg.location == 0 do
             acc
           else
-            [acc, "\x90\x01", Protox.Encode.encode_int32(msg.location)]
+            [acc, "\x98\x01", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -370,13 +384,18 @@ defmodule PgQuery.ColumnDef do
             {9, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[storage_name: delimited], rest}
+
+            {10, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[
                  raw_default:
                    Protox.MergeMessage.merge(msg.raw_default, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {10, _, bytes} ->
+            {11, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -385,12 +404,12 @@ defmodule PgQuery.ColumnDef do
                    Protox.MergeMessage.merge(msg.cooked_default, PgQuery.Node.decode!(delimited))
                ], rest}
 
-            {11, _, bytes} ->
+            {12, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[identity: delimited], rest}
 
-            {12, _, bytes} ->
+            {13, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -402,12 +421,12 @@ defmodule PgQuery.ColumnDef do
                    )
                ], rest}
 
-            {13, _, bytes} ->
+            {14, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[generated: delimited], rest}
 
-            {14, _, bytes} ->
+            {15, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
@@ -419,21 +438,21 @@ defmodule PgQuery.ColumnDef do
                    )
                ], rest}
 
-            {15, _, bytes} ->
+            {16, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[coll_oid: value], rest}
-
-            {16, _, bytes} ->
-              {len, bytes} = Protox.Varint.decode(bytes)
-              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[constraints: msg.constraints ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {17, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
-              {[fdwoptions: msg.fdwoptions ++ [PgQuery.Node.decode!(delimited)]], rest}
+              {[constraints: msg.constraints ++ [PgQuery.Node.decode!(delimited)]], rest}
 
             {18, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[fdwoptions: msg.fdwoptions ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {19, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -502,16 +521,17 @@ defmodule PgQuery.ColumnDef do
         6 => {:is_not_null, {:scalar, false}, :bool},
         7 => {:is_from_type, {:scalar, false}, :bool},
         8 => {:storage, {:scalar, ""}, :string},
-        9 => {:raw_default, {:scalar, nil}, {:message, PgQuery.Node}},
-        10 => {:cooked_default, {:scalar, nil}, {:message, PgQuery.Node}},
-        11 => {:identity, {:scalar, ""}, :string},
-        12 => {:identity_sequence, {:scalar, nil}, {:message, PgQuery.RangeVar}},
-        13 => {:generated, {:scalar, ""}, :string},
-        14 => {:coll_clause, {:scalar, nil}, {:message, PgQuery.CollateClause}},
-        15 => {:coll_oid, {:scalar, 0}, :uint32},
-        16 => {:constraints, :unpacked, {:message, PgQuery.Node}},
-        17 => {:fdwoptions, :unpacked, {:message, PgQuery.Node}},
-        18 => {:location, {:scalar, 0}, :int32}
+        9 => {:storage_name, {:scalar, ""}, :string},
+        10 => {:raw_default, {:scalar, nil}, {:message, PgQuery.Node}},
+        11 => {:cooked_default, {:scalar, nil}, {:message, PgQuery.Node}},
+        12 => {:identity, {:scalar, ""}, :string},
+        13 => {:identity_sequence, {:scalar, nil}, {:message, PgQuery.RangeVar}},
+        14 => {:generated, {:scalar, ""}, :string},
+        15 => {:coll_clause, {:scalar, nil}, {:message, PgQuery.CollateClause}},
+        16 => {:coll_oid, {:scalar, 0}, :uint32},
+        17 => {:constraints, :unpacked, {:message, PgQuery.Node}},
+        18 => {:fdwoptions, :unpacked, {:message, PgQuery.Node}},
+        19 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -521,23 +541,24 @@ defmodule PgQuery.ColumnDef do
           }
     def defs_by_name() do
       %{
-        coll_clause: {14, {:scalar, nil}, {:message, PgQuery.CollateClause}},
-        coll_oid: {15, {:scalar, 0}, :uint32},
+        coll_clause: {15, {:scalar, nil}, {:message, PgQuery.CollateClause}},
+        coll_oid: {16, {:scalar, 0}, :uint32},
         colname: {1, {:scalar, ""}, :string},
         compression: {3, {:scalar, ""}, :string},
-        constraints: {16, :unpacked, {:message, PgQuery.Node}},
-        cooked_default: {10, {:scalar, nil}, {:message, PgQuery.Node}},
-        fdwoptions: {17, :unpacked, {:message, PgQuery.Node}},
-        generated: {13, {:scalar, ""}, :string},
-        identity: {11, {:scalar, ""}, :string},
-        identity_sequence: {12, {:scalar, nil}, {:message, PgQuery.RangeVar}},
+        constraints: {17, :unpacked, {:message, PgQuery.Node}},
+        cooked_default: {11, {:scalar, nil}, {:message, PgQuery.Node}},
+        fdwoptions: {18, :unpacked, {:message, PgQuery.Node}},
+        generated: {14, {:scalar, ""}, :string},
+        identity: {12, {:scalar, ""}, :string},
+        identity_sequence: {13, {:scalar, nil}, {:message, PgQuery.RangeVar}},
         inhcount: {4, {:scalar, 0}, :int32},
         is_from_type: {7, {:scalar, false}, :bool},
         is_local: {5, {:scalar, false}, :bool},
         is_not_null: {6, {:scalar, false}, :bool},
-        location: {18, {:scalar, 0}, :int32},
-        raw_default: {9, {:scalar, nil}, {:message, PgQuery.Node}},
+        location: {19, {:scalar, 0}, :int32},
+        raw_default: {10, {:scalar, nil}, {:message, PgQuery.Node}},
         storage: {8, {:scalar, ""}, :string},
+        storage_name: {9, {:scalar, ""}, :string},
         type_name: {2, {:scalar, nil}, {:message, PgQuery.TypeName}}
       }
     end
@@ -621,11 +642,20 @@ defmodule PgQuery.ColumnDef do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "storageName",
+          kind: {:scalar, ""},
+          label: :optional,
+          name: :storage_name,
+          tag: 9,
+          type: :string
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "rawDefault",
           kind: {:scalar, nil},
           label: :optional,
           name: :raw_default,
-          tag: 9,
+          tag: 10,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -634,7 +664,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, nil},
           label: :optional,
           name: :cooked_default,
-          tag: 10,
+          tag: 11,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -643,7 +673,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, ""},
           label: :optional,
           name: :identity,
-          tag: 11,
+          tag: 12,
           type: :string
         },
         %{
@@ -652,7 +682,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, nil},
           label: :optional,
           name: :identity_sequence,
-          tag: 12,
+          tag: 13,
           type: {:message, PgQuery.RangeVar}
         },
         %{
@@ -661,7 +691,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, ""},
           label: :optional,
           name: :generated,
-          tag: 13,
+          tag: 14,
           type: :string
         },
         %{
@@ -670,7 +700,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, nil},
           label: :optional,
           name: :coll_clause,
-          tag: 14,
+          tag: 15,
           type: {:message, PgQuery.CollateClause}
         },
         %{
@@ -679,7 +709,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, 0},
           label: :optional,
           name: :coll_oid,
-          tag: 15,
+          tag: 16,
           type: :uint32
         },
         %{
@@ -688,7 +718,7 @@ defmodule PgQuery.ColumnDef do
           kind: :unpacked,
           label: :repeated,
           name: :constraints,
-          tag: 16,
+          tag: 17,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -697,7 +727,7 @@ defmodule PgQuery.ColumnDef do
           kind: :unpacked,
           label: :repeated,
           name: :fdwoptions,
-          tag: 17,
+          tag: 18,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -706,7 +736,7 @@ defmodule PgQuery.ColumnDef do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 18,
+          tag: 19,
           type: :int32
         }
       ]
@@ -991,6 +1021,46 @@ defmodule PgQuery.ColumnDef do
         []
       ),
       (
+        def field_def(:storage_name) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "storageName",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :storage_name,
+             tag: 9,
+             type: :string
+           }}
+        end
+
+        def field_def("storageName") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "storageName",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :storage_name,
+             tag: 9,
+             type: :string
+           }}
+        end
+
+        def field_def("storage_name") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "storageName",
+             kind: {:scalar, ""},
+             label: :optional,
+             name: :storage_name,
+             tag: 9,
+             type: :string
+           }}
+        end
+      ),
+      (
         def field_def(:raw_default) do
           {:ok,
            %{
@@ -999,7 +1069,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_default,
-             tag: 9,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1012,7 +1082,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_default,
-             tag: 9,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1025,7 +1095,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :raw_default,
-             tag: 9,
+             tag: 10,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1039,7 +1109,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :cooked_default,
-             tag: 10,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1052,7 +1122,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :cooked_default,
-             tag: 10,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1065,7 +1135,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :cooked_default,
-             tag: 10,
+             tag: 11,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1079,7 +1149,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, ""},
              label: :optional,
              name: :identity,
-             tag: 11,
+             tag: 12,
              type: :string
            }}
         end
@@ -1092,7 +1162,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, ""},
              label: :optional,
              name: :identity,
-             tag: 11,
+             tag: 12,
              type: :string
            }}
         end
@@ -1108,7 +1178,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :identity_sequence,
-             tag: 12,
+             tag: 13,
              type: {:message, PgQuery.RangeVar}
            }}
         end
@@ -1121,7 +1191,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :identity_sequence,
-             tag: 12,
+             tag: 13,
              type: {:message, PgQuery.RangeVar}
            }}
         end
@@ -1134,7 +1204,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :identity_sequence,
-             tag: 12,
+             tag: 13,
              type: {:message, PgQuery.RangeVar}
            }}
         end
@@ -1148,7 +1218,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, ""},
              label: :optional,
              name: :generated,
-             tag: 13,
+             tag: 14,
              type: :string
            }}
         end
@@ -1161,7 +1231,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, ""},
              label: :optional,
              name: :generated,
-             tag: 13,
+             tag: 14,
              type: :string
            }}
         end
@@ -1177,7 +1247,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :coll_clause,
-             tag: 14,
+             tag: 15,
              type: {:message, PgQuery.CollateClause}
            }}
         end
@@ -1190,7 +1260,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :coll_clause,
-             tag: 14,
+             tag: 15,
              type: {:message, PgQuery.CollateClause}
            }}
         end
@@ -1203,7 +1273,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, nil},
              label: :optional,
              name: :coll_clause,
-             tag: 14,
+             tag: 15,
              type: {:message, PgQuery.CollateClause}
            }}
         end
@@ -1217,7 +1287,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, 0},
              label: :optional,
              name: :coll_oid,
-             tag: 15,
+             tag: 16,
              type: :uint32
            }}
         end
@@ -1230,7 +1300,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, 0},
              label: :optional,
              name: :coll_oid,
-             tag: 15,
+             tag: 16,
              type: :uint32
            }}
         end
@@ -1243,7 +1313,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, 0},
              label: :optional,
              name: :coll_oid,
-             tag: 15,
+             tag: 16,
              type: :uint32
            }}
         end
@@ -1257,7 +1327,7 @@ defmodule PgQuery.ColumnDef do
              kind: :unpacked,
              label: :repeated,
              name: :constraints,
-             tag: 16,
+             tag: 17,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1270,7 +1340,7 @@ defmodule PgQuery.ColumnDef do
              kind: :unpacked,
              label: :repeated,
              name: :constraints,
-             tag: 16,
+             tag: 17,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1286,7 +1356,7 @@ defmodule PgQuery.ColumnDef do
              kind: :unpacked,
              label: :repeated,
              name: :fdwoptions,
-             tag: 17,
+             tag: 18,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1299,7 +1369,7 @@ defmodule PgQuery.ColumnDef do
              kind: :unpacked,
              label: :repeated,
              name: :fdwoptions,
-             tag: 17,
+             tag: 18,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -1315,7 +1385,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 18,
+             tag: 19,
              type: :int32
            }}
         end
@@ -1328,7 +1398,7 @@ defmodule PgQuery.ColumnDef do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 18,
+             tag: 19,
              type: :int32
            }}
         end
@@ -1381,6 +1451,9 @@ defmodule PgQuery.ColumnDef do
       {:ok, false}
     end,
     def default(:storage) do
+      {:ok, ""}
+    end,
+    def default(:storage_name) do
       {:ok, ""}
     end,
     def default(:raw_default) do

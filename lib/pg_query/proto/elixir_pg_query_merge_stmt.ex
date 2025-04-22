@@ -5,6 +5,7 @@ defmodule PgQuery.MergeStmt do
             source_relation: nil,
             join_condition: nil,
             merge_when_clauses: [],
+            returning_list: [],
             with_clause: nil
 
   (
@@ -25,6 +26,7 @@ defmodule PgQuery.MergeStmt do
         |> encode_source_relation(msg)
         |> encode_join_condition(msg)
         |> encode_merge_when_clauses(msg)
+        |> encode_returning_list(msg)
         |> encode_with_clause(msg)
       end
     )
@@ -90,12 +92,32 @@ defmodule PgQuery.MergeStmt do
                     __STACKTRACE__
         end
       end,
+      defp encode_returning_list(acc, msg) do
+        try do
+          case msg.returning_list do
+            [] ->
+              acc
+
+            values ->
+              [
+                acc,
+                Enum.reduce(values, [], fn value, acc ->
+                  [acc, "*", Protox.Encode.encode_message(value)]
+                end)
+              ]
+          end
+        rescue
+          ArgumentError ->
+            reraise Protox.EncodingError.new(:returning_list, "invalid field value"),
+                    __STACKTRACE__
+        end
+      end,
       defp encode_with_clause(acc, msg) do
         try do
           if msg.with_clause == nil do
             acc
           else
-            [acc, "*", Protox.Encode.encode_message(msg.with_clause)]
+            [acc, "2", Protox.Encode.encode_message(msg.with_clause)]
           end
         rescue
           ArgumentError ->
@@ -176,6 +198,11 @@ defmodule PgQuery.MergeStmt do
             {5, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
+              {[returning_list: msg.returning_list ++ [PgQuery.Node.decode!(delimited)]], rest}
+
+            {6, _, bytes} ->
+              {len, bytes} = Protox.Varint.decode(bytes)
+              {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
 
               {[
                  with_clause:
@@ -246,7 +273,8 @@ defmodule PgQuery.MergeStmt do
         2 => {:source_relation, {:scalar, nil}, {:message, PgQuery.Node}},
         3 => {:join_condition, {:scalar, nil}, {:message, PgQuery.Node}},
         4 => {:merge_when_clauses, :unpacked, {:message, PgQuery.Node}},
-        5 => {:with_clause, {:scalar, nil}, {:message, PgQuery.WithClause}}
+        5 => {:returning_list, :unpacked, {:message, PgQuery.Node}},
+        6 => {:with_clause, {:scalar, nil}, {:message, PgQuery.WithClause}}
       }
     end
 
@@ -259,8 +287,9 @@ defmodule PgQuery.MergeStmt do
         join_condition: {3, {:scalar, nil}, {:message, PgQuery.Node}},
         merge_when_clauses: {4, :unpacked, {:message, PgQuery.Node}},
         relation: {1, {:scalar, nil}, {:message, PgQuery.RangeVar}},
+        returning_list: {5, :unpacked, {:message, PgQuery.Node}},
         source_relation: {2, {:scalar, nil}, {:message, PgQuery.Node}},
-        with_clause: {5, {:scalar, nil}, {:message, PgQuery.WithClause}}
+        with_clause: {6, {:scalar, nil}, {:message, PgQuery.WithClause}}
       }
     end
   )
@@ -307,11 +336,20 @@ defmodule PgQuery.MergeStmt do
         },
         %{
           __struct__: Protox.Field,
+          json_name: "returningList",
+          kind: :unpacked,
+          label: :repeated,
+          name: :returning_list,
+          tag: 5,
+          type: {:message, PgQuery.Node}
+        },
+        %{
+          __struct__: Protox.Field,
           json_name: "withClause",
           kind: {:scalar, nil},
           label: :optional,
           name: :with_clause,
-          tag: 5,
+          tag: 6,
           type: {:message, PgQuery.WithClause}
         }
       ]
@@ -469,6 +507,46 @@ defmodule PgQuery.MergeStmt do
         end
       ),
       (
+        def field_def(:returning_list) do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "returningList",
+             kind: :unpacked,
+             label: :repeated,
+             name: :returning_list,
+             tag: 5,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("returningList") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "returningList",
+             kind: :unpacked,
+             label: :repeated,
+             name: :returning_list,
+             tag: 5,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+
+        def field_def("returning_list") do
+          {:ok,
+           %{
+             __struct__: Protox.Field,
+             json_name: "returningList",
+             kind: :unpacked,
+             label: :repeated,
+             name: :returning_list,
+             tag: 5,
+             type: {:message, PgQuery.Node}
+           }}
+        end
+      ),
+      (
         def field_def(:with_clause) do
           {:ok,
            %{
@@ -477,7 +555,7 @@ defmodule PgQuery.MergeStmt do
              kind: {:scalar, nil},
              label: :optional,
              name: :with_clause,
-             tag: 5,
+             tag: 6,
              type: {:message, PgQuery.WithClause}
            }}
         end
@@ -490,7 +568,7 @@ defmodule PgQuery.MergeStmt do
              kind: {:scalar, nil},
              label: :optional,
              name: :with_clause,
-             tag: 5,
+             tag: 6,
              type: {:message, PgQuery.WithClause}
            }}
         end
@@ -503,7 +581,7 @@ defmodule PgQuery.MergeStmt do
              kind: {:scalar, nil},
              label: :optional,
              name: :with_clause,
-             tag: 5,
+             tag: 6,
              type: {:message, PgQuery.WithClause}
            }}
         end
@@ -542,6 +620,9 @@ defmodule PgQuery.MergeStmt do
       {:ok, nil}
     end,
     def default(:merge_when_clauses) do
+      {:error, :no_default_value}
+    end,
+    def default(:returning_list) do
       {:error, :no_default_value}
     end,
     def default(:with_clause) do

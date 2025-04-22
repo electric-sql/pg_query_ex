@@ -1,15 +1,7 @@
 # credo:disable-for-this-file
 defmodule PgQuery.ScalarArrayOpExpr do
   @moduledoc false
-  defstruct xpr: nil,
-            opno: 0,
-            opfuncid: 0,
-            hashfuncid: 0,
-            negfuncid: 0,
-            use_or: false,
-            inputcollid: 0,
-            args: [],
-            location: 0
+  defstruct xpr: nil, opno: 0, use_or: false, inputcollid: 0, args: [], location: 0
 
   (
     (
@@ -27,9 +19,6 @@ defmodule PgQuery.ScalarArrayOpExpr do
         []
         |> encode_xpr(msg)
         |> encode_opno(msg)
-        |> encode_opfuncid(msg)
-        |> encode_hashfuncid(msg)
-        |> encode_negfuncid(msg)
         |> encode_use_or(msg)
         |> encode_inputcollid(msg)
         |> encode_args(msg)
@@ -64,48 +53,12 @@ defmodule PgQuery.ScalarArrayOpExpr do
             reraise Protox.EncodingError.new(:opno, "invalid field value"), __STACKTRACE__
         end
       end,
-      defp encode_opfuncid(acc, msg) do
-        try do
-          if msg.opfuncid == 0 do
-            acc
-          else
-            [acc, "\x18", Protox.Encode.encode_uint32(msg.opfuncid)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:opfuncid, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_hashfuncid(acc, msg) do
-        try do
-          if msg.hashfuncid == 0 do
-            acc
-          else
-            [acc, " ", Protox.Encode.encode_uint32(msg.hashfuncid)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:hashfuncid, "invalid field value"), __STACKTRACE__
-        end
-      end,
-      defp encode_negfuncid(acc, msg) do
-        try do
-          if msg.negfuncid == 0 do
-            acc
-          else
-            [acc, "(", Protox.Encode.encode_uint32(msg.negfuncid)]
-          end
-        rescue
-          ArgumentError ->
-            reraise Protox.EncodingError.new(:negfuncid, "invalid field value"), __STACKTRACE__
-        end
-      end,
       defp encode_use_or(acc, msg) do
         try do
           if msg.use_or == false do
             acc
           else
-            [acc, "0", Protox.Encode.encode_bool(msg.use_or)]
+            [acc, "\x18", Protox.Encode.encode_bool(msg.use_or)]
           end
         rescue
           ArgumentError ->
@@ -117,7 +70,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
           if msg.inputcollid == 0 do
             acc
           else
-            [acc, "8", Protox.Encode.encode_uint32(msg.inputcollid)]
+            [acc, " ", Protox.Encode.encode_uint32(msg.inputcollid)]
           end
         rescue
           ArgumentError ->
@@ -134,7 +87,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
               [
                 acc,
                 Enum.reduce(values, [], fn value, acc ->
-                  [acc, "B", Protox.Encode.encode_message(value)]
+                  [acc, "*", Protox.Encode.encode_message(value)]
                 end)
               ]
           end
@@ -148,7 +101,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
           if msg.location == 0 do
             acc
           else
-            [acc, "H", Protox.Encode.encode_int32(msg.location)]
+            [acc, "0", Protox.Encode.encode_int32(msg.location)]
           end
         rescue
           ArgumentError ->
@@ -202,31 +155,19 @@ defmodule PgQuery.ScalarArrayOpExpr do
               {[opno: value], rest}
 
             {3, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[opfuncid: value], rest}
-
-            {4, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[hashfuncid: value], rest}
-
-            {5, _, bytes} ->
-              {value, rest} = Protox.Decode.parse_uint32(bytes)
-              {[negfuncid: value], rest}
-
-            {6, _, bytes} ->
               {value, rest} = Protox.Decode.parse_bool(bytes)
               {[use_or: value], rest}
 
-            {7, _, bytes} ->
+            {4, _, bytes} ->
               {value, rest} = Protox.Decode.parse_uint32(bytes)
               {[inputcollid: value], rest}
 
-            {8, _, bytes} ->
+            {5, _, bytes} ->
               {len, bytes} = Protox.Varint.decode(bytes)
               {delimited, rest} = Protox.Decode.parse_delimited(bytes, len)
               {[args: msg.args ++ [PgQuery.Node.decode!(delimited)]], rest}
 
-            {9, _, bytes} ->
+            {6, _, bytes} ->
               {value, rest} = Protox.Decode.parse_int32(bytes)
               {[location: value], rest}
 
@@ -289,13 +230,10 @@ defmodule PgQuery.ScalarArrayOpExpr do
       %{
         1 => {:xpr, {:scalar, nil}, {:message, PgQuery.Node}},
         2 => {:opno, {:scalar, 0}, :uint32},
-        3 => {:opfuncid, {:scalar, 0}, :uint32},
-        4 => {:hashfuncid, {:scalar, 0}, :uint32},
-        5 => {:negfuncid, {:scalar, 0}, :uint32},
-        6 => {:use_or, {:scalar, false}, :bool},
-        7 => {:inputcollid, {:scalar, 0}, :uint32},
-        8 => {:args, :unpacked, {:message, PgQuery.Node}},
-        9 => {:location, {:scalar, 0}, :int32}
+        3 => {:use_or, {:scalar, false}, :bool},
+        4 => {:inputcollid, {:scalar, 0}, :uint32},
+        5 => {:args, :unpacked, {:message, PgQuery.Node}},
+        6 => {:location, {:scalar, 0}, :int32}
       }
     end
 
@@ -305,14 +243,11 @@ defmodule PgQuery.ScalarArrayOpExpr do
           }
     def defs_by_name() do
       %{
-        args: {8, :unpacked, {:message, PgQuery.Node}},
-        hashfuncid: {4, {:scalar, 0}, :uint32},
-        inputcollid: {7, {:scalar, 0}, :uint32},
-        location: {9, {:scalar, 0}, :int32},
-        negfuncid: {5, {:scalar, 0}, :uint32},
-        opfuncid: {3, {:scalar, 0}, :uint32},
+        args: {5, :unpacked, {:message, PgQuery.Node}},
+        inputcollid: {4, {:scalar, 0}, :uint32},
+        location: {6, {:scalar, 0}, :int32},
         opno: {2, {:scalar, 0}, :uint32},
-        use_or: {6, {:scalar, false}, :bool},
+        use_or: {3, {:scalar, false}, :bool},
         xpr: {1, {:scalar, nil}, {:message, PgQuery.Node}}
       }
     end
@@ -342,38 +277,11 @@ defmodule PgQuery.ScalarArrayOpExpr do
         },
         %{
           __struct__: Protox.Field,
-          json_name: "opfuncid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :opfuncid,
-          tag: 3,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "hashfuncid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :hashfuncid,
-          tag: 4,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
-          json_name: "negfuncid",
-          kind: {:scalar, 0},
-          label: :optional,
-          name: :negfuncid,
-          tag: 5,
-          type: :uint32
-        },
-        %{
-          __struct__: Protox.Field,
           json_name: "useOr",
           kind: {:scalar, false},
           label: :optional,
           name: :use_or,
-          tag: 6,
+          tag: 3,
           type: :bool
         },
         %{
@@ -382,7 +290,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :inputcollid,
-          tag: 7,
+          tag: 4,
           type: :uint32
         },
         %{
@@ -391,7 +299,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
           kind: :unpacked,
           label: :repeated,
           name: :args,
-          tag: 8,
+          tag: 5,
           type: {:message, PgQuery.Node}
         },
         %{
@@ -400,7 +308,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
           kind: {:scalar, 0},
           label: :optional,
           name: :location,
-          tag: 9,
+          tag: 6,
           type: :int32
         }
       ]
@@ -467,93 +375,6 @@ defmodule PgQuery.ScalarArrayOpExpr do
         []
       ),
       (
-        def field_def(:opfuncid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "opfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :opfuncid,
-             tag: 3,
-             type: :uint32
-           }}
-        end
-
-        def field_def("opfuncid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "opfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :opfuncid,
-             tag: 3,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:hashfuncid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "hashfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :hashfuncid,
-             tag: 4,
-             type: :uint32
-           }}
-        end
-
-        def field_def("hashfuncid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "hashfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :hashfuncid,
-             tag: 4,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
-        def field_def(:negfuncid) do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "negfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :negfuncid,
-             tag: 5,
-             type: :uint32
-           }}
-        end
-
-        def field_def("negfuncid") do
-          {:ok,
-           %{
-             __struct__: Protox.Field,
-             json_name: "negfuncid",
-             kind: {:scalar, 0},
-             label: :optional,
-             name: :negfuncid,
-             tag: 5,
-             type: :uint32
-           }}
-        end
-
-        []
-      ),
-      (
         def field_def(:use_or) do
           {:ok,
            %{
@@ -562,7 +383,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, false},
              label: :optional,
              name: :use_or,
-             tag: 6,
+             tag: 3,
              type: :bool
            }}
         end
@@ -575,7 +396,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, false},
              label: :optional,
              name: :use_or,
-             tag: 6,
+             tag: 3,
              type: :bool
            }}
         end
@@ -588,7 +409,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, false},
              label: :optional,
              name: :use_or,
-             tag: 6,
+             tag: 3,
              type: :bool
            }}
         end
@@ -602,7 +423,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :inputcollid,
-             tag: 7,
+             tag: 4,
              type: :uint32
            }}
         end
@@ -615,7 +436,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :inputcollid,
-             tag: 7,
+             tag: 4,
              type: :uint32
            }}
         end
@@ -631,7 +452,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 8,
+             tag: 5,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -644,7 +465,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: :unpacked,
              label: :repeated,
              name: :args,
-             tag: 8,
+             tag: 5,
              type: {:message, PgQuery.Node}
            }}
         end
@@ -660,7 +481,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 9,
+             tag: 6,
              type: :int32
            }}
         end
@@ -673,7 +494,7 @@ defmodule PgQuery.ScalarArrayOpExpr do
              kind: {:scalar, 0},
              label: :optional,
              name: :location,
-             tag: 9,
+             tag: 6,
              type: :int32
            }}
         end
@@ -708,15 +529,6 @@ defmodule PgQuery.ScalarArrayOpExpr do
       {:ok, nil}
     end,
     def default(:opno) do
-      {:ok, 0}
-    end,
-    def default(:opfuncid) do
-      {:ok, 0}
-    end,
-    def default(:hashfuncid) do
-      {:ok, 0}
-    end,
-    def default(:negfuncid) do
       {:ok, 0}
     end,
     def default(:use_or) do
