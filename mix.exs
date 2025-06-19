@@ -29,7 +29,7 @@ defmodule PgQuery.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4", runtime: false},
-      {:protox, "~> 1.7"},
+      {:protox, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
