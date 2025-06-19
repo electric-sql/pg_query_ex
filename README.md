@@ -24,15 +24,13 @@ An Elixir interface to the [lib_pg_query postgres query parser](https://github.c
 
 ## Installation
 
-**This package is not currently published to Hex**
-
 The package can be installed by adding `pg_query_ex` to your list of
 dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:pg_query_ex, github: "electric-sql/pg_query_ex"}
+    {:pg_query_ex, "~> 0.7"}
   ]
 end
 ```
