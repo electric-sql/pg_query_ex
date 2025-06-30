@@ -5,7 +5,7 @@ defmodule PgQuery.MixProject do
     [
       app: :pg_query_ex,
       elixir: "~> 1.13",
-      version: "0.7.0",
+      version: "0.8.0",
       start_permanent: Mix.env() == :prod,
       compilers: [:elixir_make] ++ Mix.compilers(),
       deps: deps(),
