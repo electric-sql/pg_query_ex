@@ -30,7 +30,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:pg_query_ex, "~> 0.7"}
+    {:pg_query_ex, "~> 0.8"}
   ]
 end
 ```

@@ -7,6 +7,7 @@ defmodule PgQuery.MixProject do
       elixir: "~> 1.13",
       version: "0.8.0",
       start_permanent: Mix.env() == :prod,
+      make_args: ["--jobs", "#{System.schedulers_online()}"],
       compilers: [:elixir_make] ++ Mix.compilers(),
       deps: deps(),
       description: description(),
