@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_QUERY_SIZE 65536  /* queries larger than this are rejected */
+
 #include "libpg_query/pg_query.h"
 
 static ERL_NIF_TERM result_tuple(ErlNifEnv *env, const char *status,
@@ -29,10 +31,14 @@ static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
   ERL_NIF_TERM term;
 
   if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
+    if (query.size >= MAX_QUERY_SIZE) {
+      return enif_make_badarg(env);
+    }
+
     // add one more byte for the null termination
     char statement[query.size + 1];
 
-    strncpy(statement, (char *)query.data, query.size);
+    memcpy(statement, (char *)query.data, query.size);
 
     // terminate the string
     statement[query.size] = 0;
@@ -119,10 +125,14 @@ static ERL_NIF_TERM scan_query(ErlNifEnv *env, int argc,
   ERL_NIF_TERM term;
 
   if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
+    if (query.size >= MAX_QUERY_SIZE) {
+      return enif_make_badarg(env);
+    }
+
     // add one more byte for the null termination
     char statement[query.size + 1];
 
-    strncpy(statement, (char *)query.data, query.size);
+    memcpy(statement, (char *)query.data, query.size);
 
     // terminate the string
     statement[query.size] = 0;

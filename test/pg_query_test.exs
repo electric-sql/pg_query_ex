@@ -47,6 +47,16 @@ defmodule PgQueryTest do
     assert query == query2
   end
 
+  test "raises on oversized query" do
+    # The NIF rejects queries >= 65536 bytes (MAX_QUERY_SIZE) via enif_make_badarg,
+    # which raises ArgumentError rather than crashing the VM.
+    small_query = "SELECT '" <> String.duplicate("a", 16 * 1024) <> "'"
+    assert {:ok, _} = PgQuery.parse(small_query)
+
+    oversized = "SELECT '" <> String.duplicate("a", 65_536) <> "'"
+    assert_raise ArgumentError, fn -> PgQuery.parse(oversized) end
+  end
+
   test "scans a query" do
     query = "SELECT * FROM users WHERE id = 1"
     assert {:ok, scan_result} = PgQuery.scan(query)
