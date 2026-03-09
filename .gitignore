@@ -27,3 +27,12 @@ pg_query-*.tar
 
 # compiled nif
 priv/*.so
+
+# Fuzz build outputs (compiled binaries)
+fuzz/_build/
+
+# Generated deparse corpus - rebuild with: make fuzz-corpus
+fuzz/corpus/deparse/
+
+# libFuzzer-discovered corpus entries (hash-named files added during fuzzing runs)
+fuzz/corpus/parse/[0-9a-f][0-9a-f][0-9a-f][0-9a-f]*

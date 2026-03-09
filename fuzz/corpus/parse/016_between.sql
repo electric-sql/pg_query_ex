@@ -1,0 +1,1 @@
+SELECT * FROM events WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31'
