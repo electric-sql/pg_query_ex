@@ -2730,6 +2730,11 @@ static void deparseUtilityOptionList(DeparseState *state, List *options)
 
 static void deparseSelectStmt(DeparseState *state, SelectStmt *stmt, DeparseNodeContext context)
 {
+	if (stmt == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("unexpected NULL SelectStmt in protobuf input")));
+
 	const ListCell *lc = NULL;
 	const ListCell *lc2 = NULL;
 	bool need_parens = context == DEPARSE_NODE_CONTEXT_SELECT_SETOP && (
@@ -4272,9 +4277,16 @@ static void deparseRowExpr(DeparseState *state, RowExpr *row_expr)
 
 static void deparseTypeCast(DeparseState *state, TypeCast *type_cast, DeparseNodeContext context)
 {
-	bool need_parens = needsParensAsBExpr(type_cast->arg);
+	if (type_cast->arg == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("unexpected NULL arg in TypeCast")));
+	if (type_cast->typeName == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("unexpected NULL typeName in TypeCast")));
 
-	Assert(type_cast->typeName != NULL);
+	bool need_parens = needsParensAsBExpr(type_cast->arg);
 
 	if (context == DEPARSE_NODE_CONTEXT_FUNC_EXPR)
 	{
@@ -4356,6 +4368,11 @@ static void deparseTypeCast(DeparseState *state, TypeCast *type_cast, DeparseNod
 
 static void deparseTypeName(DeparseState *state, TypeName *type_name)
 {
+	if (type_name == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("unexpected NULL TypeName in protobuf input")));
+
 	ListCell *lc;
 	bool skip_typmods = false;
 

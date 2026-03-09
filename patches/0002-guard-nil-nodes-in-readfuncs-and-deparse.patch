@@ -1,0 +1,92 @@
+diff --git a/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c b/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
+index c3c30fa..3e6f7cf 100644
+--- a/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
++++ b/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
+@@ -96,8 +96,28 @@ static List * _readList(PgQuery__List *msg)
+ 
+ static Node * _readNode(PgQuery__Node *msg)
+ {
++	if (msg == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("unexpected NULL node in protobuf input")));
++
+ 	switch (msg->node_case)
+ 	{
++		/*
++		 * Redefine READ_COND to guard against NULL inner struct pointers.
++		 * When Elixir passes a tagged oneof value like {:column_ref, nil},
++		 * Protox may encode an empty sub-message, causing protobuf-c to set
++		 * the inner pointer to a zeroed struct or NULL.  Either way we must
++		 * error cleanly rather than segfault inside the per-type reader.
++		 */
++#undef READ_COND
++#define READ_COND(typename, typename_c, typename_underscore, typename_underscore_upcase, typename_cast, outname) \
++		case PG_QUERY__NODE__NODE_##typename_underscore_upcase: \
++			if (msg->outname == NULL) \
++				ereport(ERROR, \
++						(errcode(ERRCODE_INVALID_PARAMETER_VALUE), \
++						 errmsg("unexpected NULL inner struct in protobuf node"))); \
++			return (Node *) _read##typename_c(msg->outname);
+ 		#include "pg_query_readfuncs_conds.c"
+ 
+ 		case PG_QUERY__NODE__NODE_INTEGER:
+@@ -145,7 +165,10 @@ static Node * _readNode(PgQuery__Node *msg)
+ 		case PG_QUERY__NODE__NODE_LIST:
+ 			return (Node *) _readList(msg->list);
+ 		case PG_QUERY__NODE__NODE__NOT_SET:
+-			return NULL;
++			ereport(ERROR,
++					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++					 errmsg("unexpected unset node type in protobuf input")));
++			return NULL; /* unreachable */
+ 		default:
+ 			elog(ERROR, "unsupported protobuf node type: %d",
+ 				 (int) msg->node_case);
+diff --git a/c_src/libpg_query/src/postgres_deparse.c b/c_src/libpg_query/src/postgres_deparse.c
+index 9d8e1ea..79f8c47 100644
+--- a/c_src/libpg_query/src/postgres_deparse.c
++++ b/c_src/libpg_query/src/postgres_deparse.c
+@@ -2730,6 +2730,11 @@ static void deparseUtilityOptionList(DeparseState *state, List *options)
+ 
+ static void deparseSelectStmt(DeparseState *state, SelectStmt *stmt, DeparseNodeContext context)
+ {
++	if (stmt == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("unexpected NULL SelectStmt in protobuf input")));
++
+ 	const ListCell *lc = NULL;
+ 	const ListCell *lc2 = NULL;
+ 	bool need_parens = context == DEPARSE_NODE_CONTEXT_SELECT_SETOP && (
+@@ -4272,9 +4277,16 @@ static void deparseRowExpr(DeparseState *state, RowExpr *row_expr)
+ 
+ static void deparseTypeCast(DeparseState *state, TypeCast *type_cast, DeparseNodeContext context)
+ {
+-	bool need_parens = needsParensAsBExpr(type_cast->arg);
++	if (type_cast->arg == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("unexpected NULL arg in TypeCast")));
++	if (type_cast->typeName == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("unexpected NULL typeName in TypeCast")));
+ 
+-	Assert(type_cast->typeName != NULL);
++	bool need_parens = needsParensAsBExpr(type_cast->arg);
+ 
+ 	if (context == DEPARSE_NODE_CONTEXT_FUNC_EXPR)
+ 	{
+@@ -4356,6 +4368,11 @@ static void deparseTypeCast(DeparseState *state, TypeCast *type_cast, DeparseNod
+ 
+ static void deparseTypeName(DeparseState *state, TypeName *type_name)
+ {
++	if (type_name == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("unexpected NULL TypeName in protobuf input")));
++
+ 	ListCell *lc;
+ 	bool skip_typmods = false;
+ 

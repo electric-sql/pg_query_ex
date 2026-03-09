@@ -96,8 +96,28 @@ static List * _readList(PgQuery__List *msg)
 
 static Node * _readNode(PgQuery__Node *msg)
 {
+	if (msg == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("unexpected NULL node in protobuf input")));
+
 	switch (msg->node_case)
 	{
+		/*
+		 * Redefine READ_COND to guard against NULL inner struct pointers.
+		 * When Elixir passes a tagged oneof value like {:column_ref, nil},
+		 * Protox may encode an empty sub-message, causing protobuf-c to set
+		 * the inner pointer to a zeroed struct or NULL.  Either way we must
+		 * error cleanly rather than segfault inside the per-type reader.
+		 */
+#undef READ_COND
+#define READ_COND(typename, typename_c, typename_underscore, typename_underscore_upcase, typename_cast, outname) \
+		case PG_QUERY__NODE__NODE_##typename_underscore_upcase: \
+			if (msg->outname == NULL) \
+				ereport(ERROR, \
+						(errcode(ERRCODE_INVALID_PARAMETER_VALUE), \
+						 errmsg("unexpected NULL inner struct in protobuf node"))); \
+			return (Node *) _read##typename_c(msg->outname);
 		#include "pg_query_readfuncs_conds.c"
 
 		case PG_QUERY__NODE__NODE_INTEGER:
@@ -145,7 +165,10 @@ static Node * _readNode(PgQuery__Node *msg)
 		case PG_QUERY__NODE__NODE_LIST:
 			return (Node *) _readList(msg->list);
 		case PG_QUERY__NODE__NODE__NOT_SET:
-			return NULL;
+			ereport(ERROR,
+					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+					 errmsg("unexpected unset node type in protobuf input")));
+			return NULL; /* unreachable */
 		default:
 			elog(ERROR, "unsupported protobuf node type: %d",
 				 (int) msg->node_case);
@@ -160,11 +183,19 @@ List * pg_query_protobuf_to_nodes(PgQueryProtobuf protobuf)
 
 	result = pg_query__parse_result__unpack(NULL, protobuf.len, (const uint8_t *) protobuf.data);
 
-	// TODO: Handle this by returning an error instead
-	Assert(result != NULL);
+	if (result == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("failed to unpack protobuf parse result: invalid or truncated input")));
 
-	// TODO: Handle this by returning an error instead
-	Assert(result->version == PG_VERSION_NUM);
+	if (result->version != PG_VERSION_NUM)
+	{
+		pg_query__parse_result__free_unpacked(result, NULL);
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("protobuf parse result version mismatch: expected %d, got %d",
+						PG_VERSION_NUM, result->version)));
+	}
 
 	if (result->n_stmts > 0)
 		list = list_make1(_readRawStmt(result->stmts[0]));

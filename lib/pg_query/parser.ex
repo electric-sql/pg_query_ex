@@ -33,8 +33,12 @@ defmodule PgQuery.Parser do
   end
 
   def protobuf_to_query(%PgQuery.ParseResult{} = parse_result) do
-    with {:ok, encoded, _byte_size} <- Protox.encode(parse_result) do
-      deparse_query(IO.iodata_to_binary(encoded))
+    try do
+      with {:ok, encoded, _byte_size} <- Protox.encode(parse_result) do
+        deparse_query(IO.iodata_to_binary(encoded))
+      end
+    rescue
+      e -> {:error, %{message: "protobuf encoding failed: #{Exception.message(e)}"}}
     end
   end
 
