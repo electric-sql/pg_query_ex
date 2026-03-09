@@ -5,7 +5,7 @@ defmodule PgQueryTest do
     assert {:ok, ast} = PgQuery.parse("create table a (id int8 primary key)")
 
     assert %PgQuery.ParseResult{
-             version: 170_004,
+             version: 170_007,
              stmts: [
                %PgQuery.RawStmt{
                  stmt: %PgQuery.Node{
