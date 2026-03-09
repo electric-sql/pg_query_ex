@@ -44,6 +44,8 @@ int main() {
   printf("%s\n", result.parse_tree);
 
   pg_query_free_parse_result(result);
+
+  return 0;
 }
 ```
 
@@ -57,7 +59,7 @@ This will output the parse tree (whitespace adjusted here for better readability
 
 ```json
 {
-    "version": 170004,
+    "version": 170007,
     "stmts": [
         {
             "stmt": {
@@ -110,9 +112,9 @@ int main() {
   const char *input = "SELECT update AS left /* comment */ FROM between";
 
   result = pg_query_scan(input);
-  scan_result = pg_query__scan_result__unpack(NULL, result.pbuf.len, (void *) result.pbuf.data);
+  scan_result = pg_query__scan_result__unpack(NULL, result.pbuf.len, (const uint8_t *) result.pbuf.data);
 
-  printf("  version: %d, tokens: %ld, size: %d\n", scan_result->version, scan_result->n_tokens, result.pbuf.len);
+  printf("  version: %d, tokens: %ld, size: %zu\n", scan_result->version, scan_result->n_tokens, result.pbuf.len);
   for (size_t j = 0; j < scan_result->n_tokens; j++) {
     scan_token = scan_result->tokens[j];
     token_kind = protobuf_c_enum_descriptor_get_value(&pg_query__token__descriptor, scan_token->token);
@@ -130,7 +132,7 @@ int main() {
 This will output the following:
 
 ```
-  version: 170004, tokens: 7, size: 77
+  version: 170007, tokens: 7, size: 77
   "SELECT" = [ 0, 6, SELECT, RESERVED_KEYWORD ]
   "update" = [ 7, 13, UPDATE, UNRESERVED_KEYWORD ]
   "AS" = [ 14, 16, AS, RESERVED_KEYWORD ]
@@ -174,6 +176,8 @@ int main() {
   printf("%s\n", result.fingerprint_str);
 
   pg_query_free_fingerprint_result(result);
+
+  return 0;
 }
 ```
 
