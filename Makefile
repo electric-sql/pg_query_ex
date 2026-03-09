@@ -33,5 +33,5 @@ clean:
 	$(RM) priv/libpg_query_ex.so
 
 update-libpg_query:
-	git subtree pull -P "c_src/libpg_query" --squash https://github.com/pganalyze/libpg_query.git 15-latest
+	git subtree pull -P "c_src/libpg_query" --squash https://github.com/pganalyze/libpg_query.git 17-latest
 
