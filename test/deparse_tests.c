@@ -88,7 +88,7 @@ const char* tests[] = {
   "SELECT * FROM crosstab('SELECT department, role, COUNT(id) FROM users GROUP BY department, role ORDER BY department, role', 'VALUES (''admin''::text), (''ordinary''::text)') ctab (department varchar, admin int, ordinary int)",
   "SELECT row_cols[0] AS dept, row_cols[1] AS sub, admin, ordinary FROM crosstab('SELECT ARRAY[department, sub] AS row_cols, role, COUNT(id) FROM users GROUP BY department, role ORDER BY department, role', 'VALUES (''admin''::text), (''ordinary''::text)') AS (row_cols varchar[], admin int, ordinary int)",
   "SELECT 1::int8",
-  "SELECT CAST(1 + 3 AS int8)",
+  "SELECT (1 + 3)::int8",
   "SELECT x::regclass",
   "SELECT table_field::bool, table_field::boolean FROM t",
   "SELECT true, false",
@@ -320,6 +320,7 @@ const char* tests[] = {
   "SELECT ROW(1 + 2)",
   "ALTER TABLE a ALTER COLUMN b SET DEFAULT 1",
   "ALTER TABLE a ALTER COLUMN b DROP DEFAULT",
+  "ALTER TABLE a ALTER COLUMN b SET STATISTICS DEFAULT",
   "SELECT (3 + 3) OPERATOR(pg_catalog.*) 2",
   "SELECT 3 + (3 * 2)",
   "SELECT LIMIT ALL",
@@ -414,7 +415,8 @@ const char* tests[] = {
   "CREATE TABLE my_table (created_at timestamptz NOT NULL DEFAULT (now() AT LOCAL))",
   "CREATE TABLE my_table (created_at timestamptz NOT NULL DEFAULT '1 hour'::interval + (current_timestamp AT TIME ZONE 'UTC'))",
   "ALTER TABLE my_table ADD COLUMN created_at timestamptz NOT NULL DEFAULT '1 hour'::interval + (current_timestamp AT TIME ZONE 'UTC')",
-  "CREATE TABLE my_table (created_at int NOT NULL DEFAULT 1 + 2)"
+  "CREATE TABLE my_table (created_at int NOT NULL DEFAULT 1 + 2)",
+  "/* Comment 1 */ SELECT 1; /* Comment 2 */ SELECT 2"
 };
 
 size_t testsLength = __LINE__ - 4;
