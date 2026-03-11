@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_QUERY_SIZE 65536 /* queries larger than this are rejected */
-
 #include "libpg_query/pg_query.h"
 
 static ERL_NIF_TERM result_tuple(ErlNifEnv *env, const char *status,
@@ -34,18 +32,10 @@ ERL_NIF_TERM make_error_response(ErlNifEnv *env, char *message) {
   return error_map;
 }
 
-ERL_NIF_TERM query_too_long_error(ErlNifEnv *env, size_t query_size) {
-  char error_msg[128];
-  snprintf(error_msg, 128,
-           "cannot parse query: query size %lu is bigger than maximum size %i",
-           query_size, MAX_QUERY_SIZE);
-  ERL_NIF_TERM error_map = make_error_response(env, error_msg);
-  return enif_make_tuple2(env, enif_make_atom(env, "error"), error_map);
-}
-
 static ERL_NIF_TERM max_query_size(ErlNifEnv *env, int argc,
                                    const ERL_NIF_TERM argv[]) {
-  return enif_make_int64(env, MAX_QUERY_SIZE);
+  ERL_NIF_TERM infinity = enif_make_atom(env, "infinity");
+  return infinity;
 }
 
 static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
@@ -54,19 +44,17 @@ static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
   ERL_NIF_TERM term;
 
   if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
-    if (query.size >= MAX_QUERY_SIZE) {
-      return query_too_long_error(env, query.size);
+    // Heap-allocate to support arbitrary query sizes
+    char *statement = enif_alloc(query.size + 1);
+    if (!statement) {
+      return enif_raise_exception(env, enif_make_atom(env, "enomem"));
     }
 
-    // add one more byte for the null termination
-    char statement[query.size + 1];
-
     memcpy(statement, (char *)query.data, query.size);
-
-    // terminate the string
     statement[query.size] = 0;
 
     PgQueryProtobufParseResult result = pg_query_parse_protobuf(statement);
+    enif_free(statement);
 
     if (result.error) {
       ERL_NIF_TERM error_map = make_error_response(env, result.error->message);
@@ -125,19 +113,17 @@ static ERL_NIF_TERM scan_query(ErlNifEnv *env, int argc,
   ERL_NIF_TERM term;
 
   if (argc == 1 && enif_inspect_binary(env, argv[0], &query)) {
-    if (query.size >= MAX_QUERY_SIZE) {
-      return query_too_long_error(env, query.size);
+    // Heap-allocate to support arbitrary query sizes
+    char *statement = enif_alloc(query.size + 1);
+    if (!statement) {
+      return enif_raise_exception(env, enif_make_atom(env, "enomem"));
     }
 
-    // add one more byte for the null termination
-    char statement[query.size + 1];
-
     memcpy(statement, (char *)query.data, query.size);
-
-    // terminate the string
     statement[query.size] = 0;
 
     PgQueryScanResult result = pg_query_scan(statement);
+    enif_free(statement);
 
     if (result.error) {
       ERL_NIF_TERM error_map = make_error_response(env, result.error->message);

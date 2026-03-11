@@ -47,15 +47,11 @@ defmodule PgQueryTest do
     assert query == query2
   end
 
-  test "raises on oversized query" do
-    # The NIF rejects queries >= 65536 bytes (MAX_QUERY_SIZE) via enif_make_badarg,
-    # which raises ArgumentError rather than crashing the VM.
-    small_query = "SELECT '" <> String.duplicate("a", 16 * 1024) <> "'"
-    assert {:ok, _} = PgQuery.parse(small_query)
-
-    oversized = "SELECT '" <> String.duplicate("a", 65_536) <> "'"
-    assert {:error, %{message: m}} = PgQuery.parse(oversized)
-    assert m == "cannot parse query: query size 65545 is bigger than maximum size 65536"
+  test "parses queries larger than 65536 bytes" do
+    # The NIF uses heap allocation so there is no hard size limit.
+    # Build a valid SELECT with a string literal well over the old 65536-byte cap.
+    large_query = "SELECT '" <> String.duplicate("a", 16 * 1024 * 1024) <> "'"
+    assert {:ok, _} = PgQuery.parse(large_query)
   end
 
   test "scans a query" do
@@ -78,12 +74,11 @@ defmodule PgQueryTest do
   end
 
   test "errors when scanning an overlarge query" do
-    oversized = "SELECT '" <> String.duplicate("a", 65_536) <> "'"
-    assert {:error, %{message: m}} = PgQuery.scan(oversized)
-    assert m == "cannot parse query: query size 65545 is bigger than maximum size 65536"
+    oversized = "SELECT '" <> String.duplicate("a", 16 * 1024 * 1024) <> "'"
+    assert {:ok, _} = PgQuery.scan(oversized)
   end
 
   test "max_query_size/0" do
-    assert 65536 = PgQuery.max_query_size()
+    assert :infinity = PgQuery.max_query_size()
   end
 end
