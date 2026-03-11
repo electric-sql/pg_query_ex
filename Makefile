@@ -15,13 +15,12 @@ endif
 
 all: priv/libpg_query_ex.so
 
-priv:
-	mkdir -p priv
 
 $(LIBPG_QUERY_PATH)/libpg_query.a:
 	$(MAKE) -B -C $(LIBPG_QUERY_PATH) libpg_query.a
 
-priv/libpg_query_ex.so: priv $(LIBPG_QUERY_PATH)/libpg_query.a c_src/libpg_query_ex.c
+priv/libpg_query_ex.so: $(LIBPG_QUERY_PATH)/libpg_query.a c_src/libpg_query_ex.c
+	mkdir -p priv
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ c_src/libpg_query_ex.c $(LIBPG_QUERY_PATH)/libpg_query.a
 
 protobuf:
