@@ -5,7 +5,7 @@ defmodule PgQuery.MixProject do
     [
       app: :pg_query_ex,
       elixir: "~> 1.13",
-      version: "0.9.0",
+      version: "0.10.0",
       start_permanent: Mix.env() == :prod,
       make_args: ["--jobs", "#{System.schedulers_online()}"],
       compilers: [:elixir_make] ++ Mix.compilers(),
@@ -44,6 +44,7 @@ defmodule PgQuery.MixProject do
       c_src/libpg_query/Makefile
       c_src/libpg_query/README.md
       c_src/libpg_query/pg_query.h
+      c_src/libpg_query/postgres_deparse.h
       c_src/libpg_query/patches
       c_src/libpg_query/protobuf
       c_src/libpg_query/src
