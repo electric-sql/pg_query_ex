@@ -71,4 +71,5 @@ defmodule PgQuery.Parser do
   def parse_query(_query), do: :erlang.nif_error(:nif_not_loaded)
   def deparse_query(_encoded_proto), do: :erlang.nif_error(:nif_not_loaded)
   def scan_query(_query), do: :erlang.nif_error(:nif_not_loaded)
+  def max_query_size, do: :erlang.nif_error(:nif_not_loaded)
 end

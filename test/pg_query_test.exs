@@ -75,4 +75,8 @@ defmodule PgQueryTest do
              token.token == :FROM
            end)
   end
+
+  test "max_query_size/0" do
+    assert 65536 = PgQuery.max_query_size()
+  end
 end

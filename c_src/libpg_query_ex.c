@@ -25,8 +25,11 @@ ERL_NIF_TERM make_binary(ErlNifEnv *env, char *source) {
   return binary;
 }
 
-static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc,
-                                const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM max_query_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])  {
+  return enif_make_int64(env, MAX_QUERY_SIZE);
+}
+
+static ERL_NIF_TERM parse_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
   ErlNifBinary query;
   ERL_NIF_TERM term;
 
@@ -178,7 +181,8 @@ static ERL_NIF_TERM scan_query(ErlNifEnv *env, int argc,
 static ErlNifFunc funcs[] = {
   {"parse_query", 1, parse_query},
   {"deparse_query", 1, deparse_query},
-  {"scan_query", 1, scan_query}
+  {"scan_query", 1, scan_query},
+  {"max_query_size", 0, max_query_size},
 };
 
 ERL_NIF_INIT(Elixir.PgQuery.Parser, funcs, NULL, NULL, NULL, NULL)
