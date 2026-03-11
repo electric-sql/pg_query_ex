@@ -54,7 +54,8 @@ defmodule PgQueryTest do
     assert {:ok, _} = PgQuery.parse(small_query)
 
     oversized = "SELECT '" <> String.duplicate("a", 65_536) <> "'"
-    assert_raise ArgumentError, fn -> PgQuery.parse(oversized) end
+    assert {:error, %{message: m}} = PgQuery.parse(oversized)
+    assert m == "cannot parse query: query size 65545 is bigger than maximum size 65536"
   end
 
   test "scans a query" do
@@ -74,6 +75,12 @@ defmodule PgQueryTest do
     assert Enum.any?(tokens, fn token ->
              token.token == :FROM
            end)
+  end
+
+  test "errors when scanning an overlarge query" do
+    oversized = "SELECT '" <> String.duplicate("a", 65_536) <> "'"
+    assert {:error, %{message: m}} = PgQuery.scan(oversized)
+    assert m == "cannot parse query: query size 65545 is bigger than maximum size 65536"
   end
 
   test "max_query_size/0" do
