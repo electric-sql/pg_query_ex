@@ -2,6 +2,50 @@
 
 All versions are tagged by the major Postgres version, plus an individual semver for this library itself.
 
+## 17-6.2.2   2026-01-26
+
+* pg_query_normalize: Fix handling of special strings in DefElem [#325](https://github.com/pganalyze/libpg_query/pull/325)
+  - This avoids a crash when running the normalize function on certain utility statements
+* pg_query_deparse_comments_for_query: Add missing initialization [#324](https://github.com/pganalyze/libpg_query/pull/324)
+  - This avoids a crash for callers that read the error field of the result when there is no error
+
+## 17-6.2.1   2026-01-14
+
+* Add pg_query_is_utility_stmt function to determine if query text contains utility statements [#313](https://github.com/pganalyze/libpg_query/pull/313)
+  * This is a fast check for callers that don't actually need the parse tree itself
+* Add missing top-level postgres_deparse.h in Makefile install step
+  - This was an oversight from the previous 6.2.0 release
+* Improve pg_query_summary function:
+  - Speed up summary truncate replacement logic
+  - Correctly handle `GRANT .. ON ALL TABLES IN SCHEMA` statements
+  - Correctly handle schema qualified filter columns
+
+## 17-6.2.0   2025-12-10
+
+* Add fast summary information function (pg_query_summary)
+  - This allows gathering certain information, for example which tables are referenced in a
+    statement, without requiring a Protobuf serialization step in a higher level library
+  - Additionally this can also be used to perform "smart truncation" of a query by
+    omitting deeply nested information (e.g. a CTE definition, or a target list) whilst
+    preserving more essential parts like the FROM claus
+* Deparser:
+  - Introduce pretty printing / formatting
+    - Introduces a new optional pretty print mode that emits a human readable
+      output. A detailed explanation of the mechanism can be found at the start
+      of the deparser file.
+  - Rework handling of expressions inside typecasts
+    - Prefer (..)::type syntax, unless we are already in a function call.
+  - Use lowercase keywords in xmlroot functions
+    - This matches other XML functions as well as the Postgres documentation,
+      since these are closer to function argument names than regular keywords.
+  - Fix deparse of ALTER TABLE a ALTER b SET STATISTICS DEFAULT
+  - Fix the null pointer dereference when handling identity columns
+* Allow alternate definitions of NAMEDATALEN identifier limit
+  - This allows building libpg_query with an override of the built-time limit of
+    Postgres identifiers (typically 63 characters)
+* Normalization: Add support for CALL statements
+* Bump Postgres to 17.7 and switch back to release tarballs
+
 ## 17-6.1.0   2025-04-02
 
 * Update to Postgres 17.4, and add recent patches scheduled for Postgres 17.5 (not yet released)

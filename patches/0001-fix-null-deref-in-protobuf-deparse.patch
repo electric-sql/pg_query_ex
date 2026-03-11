@@ -1,0 +1,28 @@
+diff --git a/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c b/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
+index d0a7e21..c3c30fa 100644
+--- a/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
++++ b/c_src/libpg_query/src/pg_query_readfuncs_protobuf.c
+@@ -160,11 +160,19 @@ List * pg_query_protobuf_to_nodes(PgQueryProtobuf protobuf)
+ 
+ 	result = pg_query__parse_result__unpack(NULL, protobuf.len, (const uint8_t *) protobuf.data);
+ 
+-	// TODO: Handle this by returning an error instead
+-	Assert(result != NULL);
++	if (result == NULL)
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("failed to unpack protobuf parse result: invalid or truncated input")));
+ 
+-	// TODO: Handle this by returning an error instead
+-	Assert(result->version == PG_VERSION_NUM);
++	if (result->version != PG_VERSION_NUM)
++	{
++		pg_query__parse_result__free_unpacked(result, NULL);
++		ereport(ERROR,
++				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
++				 errmsg("protobuf parse result version mismatch: expected %d, got %d",
++						PG_VERSION_NUM, result->version)));
++	}
+ 
+ 	if (result->n_stmts > 0)
+ 		list = list_make1(_readRawStmt(result->stmts[0]));

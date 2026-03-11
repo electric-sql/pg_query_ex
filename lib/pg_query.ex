@@ -1,5 +1,8 @@
 defmodule PgQuery do
   @type error() :: %{message: String.t(), cursorpos: non_neg_integer()}
+
+  defdelegate max_query_size(), to: PgQuery.Parser
+
   @doc """
   Parses the binary statement `stmt` into a Protobuf AST.
 

@@ -35,6 +35,46 @@ def deps do
 end
 ```
 
+## Fuzzing
+
+The `fuzz/` directory contains [libFuzzer](https://llvm.org/docs/LibFuzzer.html) harnesses that exercise the NIF boundary. You need clang with libFuzzer support (standard in most LLVM distributions).
+
+Build all four targets:
+
+```bash
+make fuzz
+```
+
+Optionally seed the deparse corpus from known-good SQL strings:
+
+```bash
+make fuzz-corpus
+```
+
+Then run a target, for example:
+
+```bash
+# Fuzz the parse → deparse round-trip (highest-value target)
+fuzz/_build/fuzz_roundtrip -max_len=4096 -artifact_prefix=fuzz/crashes/ fuzz/corpus/parse/
+
+# Fuzz raw protobuf bytes fed directly into the deparser
+fuzz/_build/fuzz_deparse -max_len=65536 -artifact_prefix=fuzz/crashes/ fuzz/corpus/deparse/
+
+# Fuzz the SQL parser
+fuzz/_build/fuzz_parse_protobuf -max_len=4096 -artifact_prefix=fuzz/crashes/ fuzz/corpus/parse/
+
+# Fuzz the SQL scanner
+fuzz/_build/fuzz_scan -max_len=4096 -artifact_prefix=fuzz/crashes/ fuzz/corpus/parse/
+```
+
+Crash artifacts are written to `fuzz/crashes/` (the `-artifact_prefix` flag controls this; without it libFuzzer writes to the current directory). Replay a crash by passing the file as a positional argument:
+
+```bash
+fuzz/_build/fuzz_roundtrip fuzz/crashes/<file>
+```
+
+Clean up build artefacts and generated corpus with `make fuzz-clean`.
+
 ## License
 
 This Elixir interface is distributed under the terms of the [Apache 2.0 license](./LICENSE).

@@ -20,6 +20,8 @@ const char* tests[] = {
   "select count($1), date_trunc($2, created_at at time zone $3), $4, $5 from users group by date_trunc($2, created_at at time zone $3), date_trunc($6, created_at), $4, $5",
   "SELECT CAST('abc' as varchar(50))",
   "SELECT CAST($1 as varchar(50))",
+  "CALL fn(1)",
+  "CALL fn($1)",
   "CREATE OR REPLACE FUNCTION pg_temp.testfunc(OUT response \"mytable\", OUT sequelize_caught_exception text) RETURNS RECORD AS $func_12345$ BEGIN INSERT INTO \"mytable\" (\"mycolumn\") VALUES ('myvalue') RETURNING * INTO response; EXCEPTION WHEN unique_violation THEN GET STACKED DIAGNOSTICS sequelize_caught_exception = PG_EXCEPTION_DETAIL; END $func_12345$ LANGUAGE plpgsql; SELECT (testfunc.response).\"mycolumn\", testfunc.sequelize_caught_exception FROM pg_temp.testfunc(); DROP FUNCTION IF EXISTS pg_temp.testfunc();",
   "CREATE OR REPLACE FUNCTION pg_temp.testfunc(OUT response \"mytable\", OUT sequelize_caught_exception text) RETURNS RECORD AS $1 LANGUAGE plpgsql; SELECT (testfunc.response).\"mycolumn\", testfunc.sequelize_caught_exception FROM pg_temp.testfunc(); DROP FUNCTION IF EXISTS pg_temp.testfunc();",
   "CREATE PROCEDURE insert_data(a integer, b integer) LANGUAGE SQL AS $$ INSERT INTO tbl VALUES (a); INSERT INTO tbl VALUES (b); $$",
@@ -38,6 +40,8 @@ const char* tests[] = {
   "ALTER USER MAPPING FOR bob SERVER foo OPTIONS (SET password $1)",
   "MERGE into measurement m USING new_measurement nm ON (m.city_id = nm.city_id and m.logdate=nm.logdate) WHEN MATCHED AND nm.peaktemp IS NULL THEN DELETE WHEN MATCHED THEN UPDATE SET peaktemp = greatest(m.peaktemp, nm.peaktemp), unitsales = m.unitsales + coalesce(nm.unitsales, 0) WHEN NOT MATCHED THEN INSERT (city_id, logdate, peaktemp, unitsales) VALUES (city_id, logdate, peaktemp, unitsales)",
   "MERGE into measurement m USING new_measurement nm ON (m.city_id = nm.city_id and m.logdate=nm.logdate) WHEN MATCHED AND nm.peaktemp IS NULL THEN DELETE WHEN MATCHED THEN UPDATE SET peaktemp = greatest(m.peaktemp, nm.peaktemp), unitsales = m.unitsales + coalesce(nm.unitsales, $1) WHEN NOT MATCHED THEN INSERT (city_id, logdate, peaktemp, unitsales) VALUES (city_id, logdate, peaktemp, unitsales)",
+  "DO language E'plpgsql' 'BEGIN PERFORM 1; END'",
+  "DO language $1 $2",
   // These below are as expected, though questionable if upstream shouldn't be
   // fixed as this could bloat pg_stat_statements
   "DECLARE cursor_b CURSOR FOR SELECT * FROM x WHERE id = 123",
