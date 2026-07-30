@@ -13,6 +13,7 @@
 </a>
 
 [![License - Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue)](./LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Felectric-sql%2Fpg_query_ex.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Felectric-sql%2Fpg_query_ex?ref=badge_shield)
 
 # PgQuery
 
@@ -80,6 +81,9 @@ Clean up build artefacts and generated corpus with `make fuzz-clean`.
 This Elixir interface is distributed under the terms of the [Apache 2.0 license](./LICENSE).
 
 The codebase also contains a git-subtree snapshot of [lib_pg_query](https://github.com/pganalyze/libpg_query) which is distributed under the [BSD 3-Clause license](https://github.com/pganalyze/libpg_query/blob/15-latest/LICENSE).
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Felectric-sql%2Fpg_query_ex.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Felectric-sql%2Fpg_query_ex?ref=badge_large)
 
 ## Contributing
 
